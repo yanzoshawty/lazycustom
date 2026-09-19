@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Token desain lazycustom.
+ * Satu aksen (raspberry) untuk seluruh antarmuka. Warna-warni datang dari tema chat
+ * di area preview, bukan dari UI editor.
+ * Radius: tombol dan toggle berbentuk pil, panel 20px, kolom isian 12px.
+ */
+:root {
+  --bg: #f4f5f8;
+  --surface: #fcfcfd;
+  --surface-2: #eceef3;
+  --line: #d9dde6;
+  --text: #16181d;
+  --text-2: #444b5a;
+  --text-3: #5b6374;
+  --accent: #cc2c65;
+  --on-accent: #fcfcfd;
+  --accent-soft: #fbe3ec;
+  --danger: #b3261e;
+  --danger-soft: #fbe6e4;
+  --warn: #8a5a00;
+  --warn-soft: #fbefd2;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0f1115;
+  --surface: #171a21;
+  --surface-2: #1f232c;
+  --line: #2a2f3a;
+  --text: #eceef3;
+  --text-2: #b4bacb;
+  --text-3: #959db0;
+  --accent: #f0699a;
+  --on-accent: #1a0b12;
+  --accent-soft: #3a1626;
+  --danger: #ff9b93;
+  --danger-soft: #3a1917;
+  --warn: #f2c96b;
+  --warn-soft: #33270b;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-ink-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --radius-field: 12px;
+  --radius-panel: 20px;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Latar kotak-kotak untuk menandai area transparan di preview. */
+.checker {
+  background-color: #cfd3dc;
+  background-image:
+    linear-gradient(45deg, #b9bec9 25%, transparent 25%, transparent 75%, #b9bec9 75%),
+    linear-gradient(45deg, #b9bec9 25%, transparent 25%, transparent 75%, #b9bec9 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

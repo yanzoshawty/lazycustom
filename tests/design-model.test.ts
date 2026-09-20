@@ -3,9 +3,9 @@ import { designFromTemplate, DEFAULT_DESIGN, TEMPLATES } from "@/lib/design/temp
 import { designsEqual, isSafeImageUrl, newId, parseDesign } from "@/lib/design/model";
 
 describe("template", () => {
-  it("menyediakan sebelas template dengan id unik", () => {
-    expect(TEMPLATES).toHaveLength(11);
-    expect(new Set(TEMPLATES.map((t) => t.id)).size).toBe(11);
+  it("menyediakan enam belas template dengan id unik", () => {
+    expect(TEMPLATES).toHaveLength(16);
+    expect(new Set(TEMPLATES.map((t) => t.id)).size).toBe(16);
   });
 
   it.each(TEMPLATES)("$id lolos validasi skema dan konsisten dengan id-nya", ({ id, name, design }) => {

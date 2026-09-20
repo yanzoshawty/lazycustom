@@ -487,3 +487,65 @@ describe("kualitas CSS keseluruhan dengan fitur baru", () => {
     expect(generateCss(d)).toContain("wght@400;500;600;700");
   });
 });
+
+describe("template bergaya memakai fitur khasnya", () => {
+  const t = (id: string) => designFromTemplate(id as never);
+
+  it("Brutal: garis tebal, hard shadow, tanpa radius, efek shake, label member", () => {
+    const d = t("brutal");
+    expect(d.bubble.borderWidth).toBeGreaterThanOrEqual(4);
+    expect(d.bubble.shadow).toBe("hard");
+    expect(d.bubble.radius).toBe(0);
+    expect(d.effects.map((e) => e.kind)).toContain("shake");
+    expect(d.labels[0]).toMatchObject({ text: "MEMBER", roles: "member" });
+    expect(d.font).toBe("archivo-black");
+  });
+
+  it("Phantom: potongan miring, halftone merah, glitch, dan bubble owner tersendiri", () => {
+    const d = t("phantom");
+    expect(d.bubble.shape).toBe("slant");
+    expect(d.bubble.decorations.some((x) => x.kind === "halftone")).toBe(true);
+    expect(d.effects.map((e) => e.kind)).toContain("glitch");
+    expect(d.roleBubbles.owner?.surface.fill).toMatchObject({ mode: "solid", color: "#E60012" });
+    expect(d.roleBubbles.member).toBeNull();
+    expect(generateCss(d)).toContain('[author-type="owner"] #content');
+  });
+
+  it("Quest: kerangka grid satu kolom dengan nama di atas pesan, teks menyapu, font piksel", () => {
+    const d = t("quest");
+    expect(d.message.layout).toBe("grid");
+    expect(d.message.grid.cells.name.row).toBe(1);
+    expect(d.message.grid.cells.message.row).toBe(2);
+    expect(d.elements.message.style).toBe("wipe");
+    expect(d.font).toBe("press-start-2p");
+    expect(d.labels.map((l) => l.roles)).toEqual(["member", "moderator"]);
+  });
+
+  it("Arena: chamfer, bubble berbeda untuk moderator dan owner, dua label peran", () => {
+    const d = t("arena");
+    expect(d.bubble.shape).toBe("chamfer");
+    expect(d.roleBubbles.moderator).not.toBeNull();
+    expect(d.roleBubbles.owner).not.toBeNull();
+    expect(d.labels.map((l) => l.text)).toEqual(["MOD", "HOST"]);
+    const css = generateCss(d);
+    expect(css).toContain('[author-type="moderator"] #content');
+    expect(css).toContain("#4DA3FF");
+  });
+
+  it("Cyber: shimmer pada ring, glitch pada nama, glow berdenyut", () => {
+    const d = t("cyber");
+    expect(d.effects.map((e) => e.kind)).toEqual(["shimmer", "glitch", "glow-pulse"]);
+    const css = generateCss(d);
+    expect(css).toContain("@keyframes lc-fx-shimmer-0");
+    expect(css).toContain("@keyframes lc-fx-glitch-1");
+    expect(css).toContain("@keyframes lc-fx-glow-pulse-2");
+  });
+
+  it("semua template baru punya minimal satu animasi per elemen atau efek", () => {
+    for (const id of ["brutal", "phantom", "quest", "arena", "cyber"]) {
+      const d = t(id);
+      const animated = Object.values(d.elements).some((a) => a.style !== "none") || d.effects.length > 0;
+      expect(animated, id).toBe(true);
+    }
+  });
+});

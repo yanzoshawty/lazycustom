@@ -1,4 +1,16 @@
-import type { Card, Decoration, Design, Fill, Surface, TemplateId } from "./model";
+import {
+  DEFAULT_AFFIXES,
+  DEFAULT_ELEMENTS,
+  DEFAULT_FREE,
+  DEFAULT_GRID,
+  DEFAULT_ROLE_BUBBLES,
+  type Card,
+  type Decoration,
+  type Design,
+  type Fill,
+  type Surface,
+  type TemplateId,
+} from "./model";
 
 /** Konstruktor kecil supaya definisi template tetap ringkas dan seragam. */
 const solid = (color: string, opacity = 100): Fill => ({ mode: "solid", color, color2: color, angle: 135, opacity });
@@ -60,6 +72,8 @@ const surface = (o: Partial<Surface> = {}): Surface => ({
   shadow: "none",
   shadowColor: "#000000",
   decorations: [],
+  shape: "round",
+  cut: 12,
   ...o,
 });
 
@@ -115,7 +129,12 @@ const BASE: Design = {
   edge: "soft",
   animation: { style: "slide-up", duration: 360, easing: "smooth" },
   row: { gap: 8, align: "left", maxWidth: 100, avatarPosition: "left" },
-  message: { layout: "inline", order: DEFAULT_ORDER },
+  message: { layout: "inline", order: DEFAULT_ORDER, grid: DEFAULT_GRID, free: DEFAULT_FREE },
+  elements: DEFAULT_ELEMENTS,
+  effects: [],
+  labels: [],
+  affixes: DEFAULT_AFFIXES,
+  roleBubbles: DEFAULT_ROLE_BUBBLES,
   bubble: { ...PLAIN_BUBBLE, show: false, roleTint: false },
   avatar: { show: true, size: 32, shape: "circle", ringWidth: 0, ringColor: "#7DD3FC", frame: { url: "", scale: 130 } },
   panelImages: [],

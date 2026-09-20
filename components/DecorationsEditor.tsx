@@ -13,6 +13,8 @@ export const DECORATION_LABEL: Record<DecorationKind, string> = {
   scanlines: "Scanlines",
   image: "Image (latar)",
   "image-pin": "Image pin",
+  halftone: "Halftone",
+  stripes: "Stripes",
 };
 
 const MAX_DECORATIONS = 8;
@@ -41,6 +43,10 @@ export function newDecoration(kind: DecorationKind): Decoration {
       return { id, kind, url: "", fit: "cover", position: "center", opacity: 60 };
     case "image-pin":
       return { id, kind, url: "", anchor: "top-right", width: 32, offsetX: 6, offsetY: 6 };
+    case "halftone":
+      return { id, kind, color: "#FFFFFF", size: 8, opacity: 14 };
+    case "stripes":
+      return { id, kind, color: "#FFFFFF", width: 6, gap: 10, angle: 45, opacity: 12 };
   }
 }
 
@@ -102,6 +108,24 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
           <ColorField label="Warna" value={d.color} onChange={(color) => onChange({ ...d, color })} />
           <SliderField label="Line gap" value={d.gap} min={2} max={10} unit="px" onChange={(gap) => onChange({ ...d, gap })} />
           <SliderField label="Opacity" value={d.opacity} min={3} max={40} unit="%" onChange={(opacity) => onChange({ ...d, opacity })} />
+        </>
+      );
+    case "halftone":
+      return (
+        <>
+          <ColorField label="Warna" value={d.color} onChange={(color) => onChange({ ...d, color })} />
+          <SliderField label="Dot size" value={d.size} min={4} max={20} unit="px" onChange={(size) => onChange({ ...d, size })} />
+          <SliderField label="Opacity" value={d.opacity} min={3} max={60} unit="%" onChange={(opacity) => onChange({ ...d, opacity })} />
+        </>
+      );
+    case "stripes":
+      return (
+        <>
+          <ColorField label="Warna" value={d.color} onChange={(color) => onChange({ ...d, color })} />
+          <SliderField label="Stripe width" value={d.width} min={2} max={20} unit="px" onChange={(width) => onChange({ ...d, width })} />
+          <SliderField label="Line gap" value={d.gap} min={2} max={30} unit="px" onChange={(gap) => onChange({ ...d, gap })} />
+          <SliderField label="Angle" value={d.angle} min={0} max={180} step={5} unit={"\u00b0"} onChange={(angle) => onChange({ ...d, angle })} />
+          <SliderField label="Opacity" value={d.opacity} min={3} max={80} unit="%" onChange={(opacity) => onChange({ ...d, opacity })} />
         </>
       );
     case "image-pin":

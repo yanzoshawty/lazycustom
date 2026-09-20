@@ -89,6 +89,7 @@ function cards(bubble: Surface, o: CardOpts): Pick<Design, "superChat" | "member
     textColor: o.text,
     amountSize: 115,
     amountWeight: 700,
+    amountGap: 8,
     showAvatar: true,
   });
   return {
@@ -110,7 +111,7 @@ const BASE: Design = {
   fontSize: 20,
   panel: { color: "#0F1115", opacity: 0 },
   hideChrome: true,
-  hideTicker: false,
+  hideTicker: true,
   edge: "soft",
   animation: { style: "slide-up", duration: 360, easing: "smooth" },
   row: { gap: 8, align: "left", maxWidth: 100, avatarPosition: "left" },

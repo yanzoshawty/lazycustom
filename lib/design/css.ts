@@ -370,6 +370,21 @@ function cardCss(kind: CardKind, root: string, c: Card, d: Design): string[] {
     ]),
   );
 
+  if (kind === "superchat") {
+    // Nama di atas nominal: jarak vertikal.
+    out.push(rule(`${root} #header-content-primary-column`, [["display", "flex"], ["flex-direction", "column"], ["row-gap", `${c.amountGap}px`]]));
+  }
+  if (kind === "sticker") {
+    // Nama dan chip nominal berdampingan, turun ke baris berikutnya kalau tidak muat.
+    out.push(
+      rule(`${root} #author-info`, [
+        ["display", "flex"],
+        ["flex-wrap", "wrap"],
+        ["align-items", "center"],
+        ["gap", `4px ${c.amountGap}px`],
+      ]),
+    );
+  }
   if (kind !== "membership") {
     out.push(
       rule([`${root} #purchase-amount`, `${root} #purchase-amount *`], [

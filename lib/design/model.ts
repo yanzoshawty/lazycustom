@@ -136,6 +136,8 @@ export const cardSchema = z.object({
   textColor: hex,
   amountSize: z.number().int().min(80).max(200),
   amountWeight: weight,
+  /** Jarak antara nama pengirim dan nominal (px). */
+  amountGap: z.number().int().min(0).max(24).default(8),
   showAvatar: z.boolean(),
 });
 export type Card = z.infer<typeof cardSchema>;

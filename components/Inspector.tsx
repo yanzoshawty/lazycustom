@@ -113,6 +113,7 @@ function CardEditor({ kind, design, edit }: { kind: CardKey; design: Design; edi
             ) : (
               <ColorField label="Warna nominal" value={card.amountColor} onChange={(amountColor) => patch((c) => ({ ...c, amountColor }), "amountColor")} />
             )}
+            <SliderField label="Jarak nama dan nominal" value={card.amountGap} min={0} max={24} unit="px" onChange={(amountGap) => patch((c) => ({ ...c, amountGap }), "amountGap")} />
             <SliderField label="Ukuran nominal" value={card.amountSize} min={80} max={200} unit="%" onChange={(amountSize) => patch((c) => ({ ...c, amountSize }), "amountSize")} />
             <Segmented label="Ketebalan nominal" small value={card.amountWeight} options={WEIGHTS} onChange={(amountWeight) => patch((c) => ({ ...c, amountWeight }), "amountWeight")} />
           </>

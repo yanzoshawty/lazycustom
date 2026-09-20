@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { Plus, Trash } from "@phosphor-icons/react";
-import { isSafeImageUrl, type Decoration, type DecorationKind } from "@/lib/design/model";
-import { ColorField, Segmented, SliderField, TextField } from "./controls";
+import type { Decoration, DecorationKind } from "@/lib/design/model";
+import { AnchorPicker, ColorField, Segmented, SliderField } from "./controls";
+import { ImageSourceField } from "./ImageSourceField";
 
 export const DECORATION_LABEL: Record<DecorationKind, string> = {
   glow: "Glow",
@@ -11,7 +11,8 @@ export const DECORATION_LABEL: Record<DecorationKind, string> = {
   "accent-bar": "Accent bar",
   corners: "Corner brackets",
   scanlines: "Scanlines",
-  image: "Image",
+  image: "Image (latar)",
+  "image-pin": "Image pin",
 };
 
 const MAX_DECORATIONS = 8;
@@ -38,45 +39,13 @@ export function newDecoration(kind: DecorationKind): Decoration {
       return { id, kind, gap: 4, opacity: 10, color: "#7DD3FC" };
     case "image":
       return { id, kind, url: "", fit: "cover", position: "center", opacity: 60 };
+    case "image-pin":
+      return { id, kind, url: "", anchor: "top-right", width: 32, offsetX: 6, offsetY: 6 };
   }
 }
 
 /** Gradient border dan gambar hanya satu per permukaan, karena masing-masing memakai satu pseudo-element. */
 const SINGLE: DecorationKind[] = ["gradient-border", "image"];
-
-function UrlField({ value, onCommit }: { value: string; onCommit: (url: string) => void }) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  function handle(text: string) {
-    setDraft(text);
-    if (isSafeImageUrl(text)) {
-      setError(null);
-      onCommit(text);
-    } else {
-      setError("Link harus diawali https:// dan tidak boleh berisi spasi, tanda kutip, atau kurung.");
-    }
-  }
-
-  function blur() {
-    if (draft !== null && error) setError("Link tidak valid, jadi nilai sebelumnya kami kembalikan.");
-    setDraft(null);
-  }
-
-  return (
-    <div onBlur={blur}>
-      <TextField
-        label="Link gambar atau GIF"
-        inputMode="url"
-        value={draft ?? value}
-        placeholder="https://contoh.com/gambar.gif"
-        error={error}
-        hint="Gambar dimuat langsung dari link ini saat chat tampil di OBS. Pakai host yang stabil."
-        onChange={handle}
-      />
-    </div>
-  );
-}
 
 function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) => void }) {
   switch (d.kind) {
@@ -92,10 +61,10 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
     case "gradient-border":
       return (
         <>
-          <ColorField label="Warna awal" value={d.color} onChange={(color) => onChange({ ...d, color })} />
-          <ColorField label="Warna akhir" value={d.color2} onChange={(color2) => onChange({ ...d, color2 })} />
+          <ColorField label="Start color" value={d.color} onChange={(color) => onChange({ ...d, color })} />
+          <ColorField label="End color" value={d.color2} onChange={(color2) => onChange({ ...d, color2 })} />
           <SliderField label="Angle" value={d.angle} min={0} max={360} step={5} unit={"\u00b0"} onChange={(angle) => onChange({ ...d, angle })} />
-          <SliderField label="Ketebalan" value={d.width} min={1} max={4} unit="px" onChange={(width) => onChange({ ...d, width })} />
+          <SliderField label="Thickness" value={d.width} min={1} max={4} unit="px" onChange={(width) => onChange({ ...d, width })} />
           <SliderField label="Opacity" value={d.opacity} min={0} max={100} unit="%" onChange={(opacity) => onChange({ ...d, opacity })} />
         </>
       );
@@ -103,7 +72,7 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
       return (
         <>
           <Segmented
-            label="Sisi"
+            label="Side"
             small
             value={d.side}
             options={[
@@ -114,9 +83,9 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
             ]}
             onChange={(side) => onChange({ ...d, side })}
           />
-          <ColorField label="Warna awal" value={d.color} onChange={(color) => onChange({ ...d, color })} />
-          <ColorField label="Warna akhir" value={d.color2} onChange={(color2) => onChange({ ...d, color2 })} />
-          <SliderField label="Ketebalan" value={d.thickness} min={2} max={12} unit="px" onChange={(thickness) => onChange({ ...d, thickness })} />
+          <ColorField label="Start color" value={d.color} onChange={(color) => onChange({ ...d, color })} />
+          <ColorField label="End color" value={d.color2} onChange={(color2) => onChange({ ...d, color2 })} />
+          <SliderField label="Thickness" value={d.thickness} min={2} max={12} unit="px" onChange={(thickness) => onChange({ ...d, thickness })} />
         </>
       );
     case "corners":
@@ -124,21 +93,32 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
         <>
           <ColorField label="Warna" value={d.color} onChange={(color) => onChange({ ...d, color })} />
           <SliderField label="Ukuran" value={d.size} min={6} max={24} unit="px" onChange={(size) => onChange({ ...d, size })} />
-          <SliderField label="Ketebalan" value={d.thickness} min={1} max={4} unit="px" onChange={(thickness) => onChange({ ...d, thickness })} />
+          <SliderField label="Thickness" value={d.thickness} min={1} max={4} unit="px" onChange={(thickness) => onChange({ ...d, thickness })} />
         </>
       );
     case "scanlines":
       return (
         <>
           <ColorField label="Warna" value={d.color} onChange={(color) => onChange({ ...d, color })} />
-          <SliderField label="Jarak garis" value={d.gap} min={2} max={10} unit="px" onChange={(gap) => onChange({ ...d, gap })} />
+          <SliderField label="Line gap" value={d.gap} min={2} max={10} unit="px" onChange={(gap) => onChange({ ...d, gap })} />
           <SliderField label="Opacity" value={d.opacity} min={3} max={40} unit="%" onChange={(opacity) => onChange({ ...d, opacity })} />
+        </>
+      );
+    case "image-pin":
+      return (
+        <>
+          <ImageSourceField value={d.url} onChange={(url) => onChange({ ...d, url })} />
+          <AnchorPicker label="Position" value={d.anchor} onChange={(anchor) => onChange({ ...d, anchor })} />
+          <SliderField label="Lebar" value={d.width} min={8} max={240} unit="px" onChange={(width) => onChange({ ...d, width })} />
+          <SliderField label="Offset X" value={d.offsetX} min={-40} max={80} unit="px" onChange={(offsetX) => onChange({ ...d, offsetX })} />
+          <SliderField label="Offset Y" value={d.offsetY} min={-40} max={80} unit="px" onChange={(offsetY) => onChange({ ...d, offsetY })} />
+          <p className="text-xs text-ink-3">Tinggi mengikuti proporsi gambar. Bisa lebih dari satu gambar per permukaan.</p>
         </>
       );
     case "image":
       return (
         <>
-          <UrlField value={d.url} onCommit={(url) => onChange({ ...d, url })} />
+          <ImageSourceField value={d.url} onChange={(url) => onChange({ ...d, url })} />
           <Segmented
             label="Fit"
             small
@@ -151,7 +131,7 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
             onChange={(fit) => onChange({ ...d, fit })}
           />
           <Segmented
-            label="Posisi"
+            label="Position"
             small
             value={d.position}
             options={[

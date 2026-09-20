@@ -5,6 +5,7 @@ import { generateCss } from "@/lib/design/css";
 import { encodeDesign } from "@/lib/design/share";
 import { designStore } from "@/lib/design/store";
 import { designFromTemplate } from "@/lib/design/templates";
+import { remoteImageUrls, type Design } from "@/lib/design/model";
 
 vi.mock("@/lib/report", () => ({ report: vi.fn(() => "LC-TEST") }));
 
@@ -73,7 +74,7 @@ describe("Editor: template, edit, dan undo", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Layers" }));
     fireEvent.click(screen.getByRole("button", { name: /^Panel/ }));
     const props = screen.getByRole("complementary", { name: "Properties" });
-    fireEvent.change(within(props).getByLabelText("Ukuran font dasar"), { target: { value: "30" } });
+    fireEvent.change(within(props).getByLabelText("Base font size"), { target: { value: "30" } });
     fireEvent.click(screen.getByRole("tab", { name: "Templates" }));
     expect(document.querySelectorAll('button[aria-label^="Pakai template"][aria-pressed="true"]')).toHaveLength(0);
   });
@@ -83,7 +84,7 @@ describe("Editor: template, edit, dan undo", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Layers" }));
     fireEvent.click(screen.getByRole("button", { name: /^Panel/ }));
     const props = screen.getByRole("complementary", { name: "Properties" });
-    const slider = within(props).getByLabelText("Ukuran font dasar");
+    const slider = within(props).getByLabelText("Base font size");
     for (const v of ["21", "22", "23", "24"]) fireEvent.change(slider, { target: { value: v } });
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
@@ -183,5 +184,68 @@ describe("Editor: My Designs", () => {
     expect(screen.getByText("My Designs (2/20)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Klik lagi untuk menghapus New design" }));
     expect(screen.getByText("My Designs (1/20)")).toBeInTheDocument();
+  });
+});
+
+function designWithRemoteImage(name: string): Design {
+  const d = designFromTemplate("aurora", name);
+  d.bubble.decorations.push({ id: "image-pin-zzzz", kind: "image-pin", url: "https://pelacak.example.net/p.gif", anchor: "top-right", width: 24, offsetX: 0, offsetY: 0 });
+  d.avatar.frame = { url: "https://cdn.example.org/frame.png", scale: 130 };
+  return d;
+}
+
+describe("Editor: gambar dari luar pada desain orang lain", () => {
+  it("link Share yang memuat gambar luar menunggu keputusan dan belum membuka apa pun", async () => {
+    history.replaceState(null, "", "/#d=" + (await encodeDesign(designWithRemoteImage("Dari Orang"))));
+    render(<Editor />);
+    expect(await screen.findByText("Desain ini memuat gambar dari alamat luar")).toBeInTheDocument();
+    expect(screen.getByText("pelacak.example.net", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText(/alamat IP-mu/)).toBeInTheDocument();
+    // Belum dibuka: desain aktif masih Crystal, dan CSS tidak memuat alamat luar.
+    expect(nameInput().value).toBe("Crystal");
+    expect(designStore.getSnapshot().saved).toHaveLength(1);
+    expect(codeText()).not.toContain("pelacak.example.net");
+  });
+
+  it("pilihan aman (Buka tanpa gambar) mendapat fokus dan membuka desain tanpa satu pun alamat luar", async () => {
+    history.replaceState(null, "", "/#d=" + (await encodeDesign(designWithRemoteImage("Dari Orang"))));
+    render(<Editor />);
+    const safe = await screen.findByRole("button", { name: "Buka tanpa gambar" });
+    expect(safe).toHaveFocus();
+    fireEvent.click(safe);
+    await waitFor(() => expect(nameInput().value).toBe("Dari Orang"));
+    expect(remoteImageUrls(designStore.getSnapshot().design)).toEqual([]);
+    expect(codeText()).not.toContain("pelacak.example.net");
+    expect(codeText()).not.toContain("cdn.example.org");
+    expect(screen.queryByText("Desain ini memuat gambar dari alamat luar")).not.toBeInTheDocument();
+  });
+
+  it("Buka dengan gambar mempertahankan gambar luar", async () => {
+    history.replaceState(null, "", "/#d=" + (await encodeDesign(designWithRemoteImage("Dari Orang"))));
+    render(<Editor />);
+    fireEvent.click(await screen.findByRole("button", { name: "Buka dengan gambar" }));
+    await waitFor(() => expect(nameInput().value).toBe("Dari Orang"));
+    expect(remoteImageUrls(designStore.getSnapshot().design)).toHaveLength(2);
+    expect(codeText()).toContain("https://pelacak.example.net/p.gif");
+  });
+
+  it("link Share tanpa gambar luar tetap langsung terbuka tanpa pertanyaan", async () => {
+    history.replaceState(null, "", "/#d=" + (await encodeDesign(designFromTemplate("holo", "Polos"))));
+    render(<Editor />);
+    await waitFor(() => expect(nameInput().value).toBe("Polos"));
+    expect(screen.queryByText("Desain ini memuat gambar dari alamat luar")).not.toBeInTheDocument();
+  });
+
+  it("file impor yang memuat gambar luar juga ditanyakan dulu", async () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole("tab", { name: "Designs" }));
+    const file = new File([JSON.stringify(designWithRemoteImage("Dari File"))], "d.json", { type: "application/json" });
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
+    expect(await screen.findByText("Desain ini memuat gambar dari alamat luar")).toBeInTheDocument();
+    expect(screen.getByText(/File ini memakai 2 gambar/)).toBeInTheDocument();
+    expect(nameInput().value).toBe("Crystal");
+    fireEvent.click(screen.getByRole("button", { name: "Buka tanpa gambar" }));
+    await waitFor(() => expect(nameInput().value).toBe("Dari File"));
+    expect(remoteImageUrls(designStore.getSnapshot().design)).toEqual([]);
   });
 });

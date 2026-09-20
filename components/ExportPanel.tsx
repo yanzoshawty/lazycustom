@@ -3,6 +3,7 @@
 import { useState, type RefObject } from "react";
 import { Check, Copy, LinkSimple } from "@phosphor-icons/react";
 import { copyText } from "@/lib/clipboard";
+import { shortenForDisplay } from "@/lib/design/css";
 import { report } from "@/lib/report";
 import { extractVideoId, popoutChatUrl } from "@/lib/youtube-url";
 import { ErrorNotice } from "./ErrorNotice";
@@ -132,6 +133,8 @@ function ChatLinkBuilder() {
 }
 
 export function ExportPanel({ css, codeRef, copyState, onCopy }: Props) {
+  const view = shortenForDisplay(css);
+  const sizeKb = Math.max(1, Math.round(css.length / 1024));
   return (
     <section id="export" aria-labelledby="output-title" className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-10">
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
@@ -147,8 +150,13 @@ export function ExportPanel({ css, codeRef, copyState, onCopy }: Props) {
           aria-label="Kode CSS hasil desainmu"
           className="max-h-[360px] w-full min-w-0 max-w-full overflow-auto panel p-4 font-mono text-xs leading-relaxed text-ink"
         >
-          <code>{css}</code>
+          <code>{view.text}</code>
         </pre>
+        <p className="text-xs text-ink-3">
+          Ukuran CSS: {sizeKb} KB.
+          {view.shortened > 0 ? ` ${view.shortened} gambar unggahan disingkat di tampilan ini. Tombol Copy CSS tetap menyalin CSS lengkap.` : ""}
+          {sizeKb > 250 ? " CSS cukup besar. Kalau OBS terasa berat, pakai link gambar https sebagai ganti unggahan." : ""}
+        </p>
       </div>
 
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-6">

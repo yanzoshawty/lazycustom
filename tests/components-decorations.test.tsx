@@ -35,7 +35,8 @@ describe("DecorationsEditor", () => {
     const img = newDecoration("image");
     render(<DecorationsEditor decorations={[ring, img]} onChange={() => undefined} />);
     expect(screen.getByRole("button", { name: "Gradient border" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Image" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Image (latar)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Image pin" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Glow" })).toBeEnabled();
   });
 

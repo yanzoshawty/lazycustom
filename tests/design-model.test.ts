@@ -90,6 +90,25 @@ describe("parseDesign", () => {
   });
 });
 
+describe("kompatibilitas desain lama", () => {
+  it("desain tersimpan tanpa field yang ditambahkan belakangan tetap valid dan mendapat nilai bawaan", () => {
+    const old = JSON.parse(JSON.stringify(DEFAULT_DESIGN));
+    for (const k of ["superChat", "membership", "sticker"]) delete old[k].amountGap;
+    const r = parseDesign(old);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.design.superChat.amountGap).toBe(8);
+      expect(r.design.sticker.amountGap).toBe(8);
+    }
+  });
+
+  it("menolak jarak nominal di luar batas", () => {
+    const d = JSON.parse(JSON.stringify(DEFAULT_DESIGN));
+    d.sticker.amountGap = 99;
+    expect(parseDesign(d).ok).toBe(false);
+  });
+});
+
 describe("isSafeImageUrl", () => {
   it.each([
     "",

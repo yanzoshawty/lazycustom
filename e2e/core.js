@@ -178,8 +178,8 @@ function ok(name, cond, detail = "") {
   await props(p).getByRole("button", { name: "Scanlines", exact: true }).click();
   await p.waitForTimeout(250);
   ok("tambah Scanlines masuk ke CSS", (await cssText(p)).includes("repeating-linear-gradient"));
-  await props(p).getByRole("button", { name: "Image", exact: true }).click();
-  const url = props(p).getByLabel("Link gambar atau GIF");
+  await props(p).getByRole("button", { name: "Image (latar)", exact: true }).click();
+  const url = props(p).getByLabel("Link gambar atau GIF", { exact: true });
   await url.fill('https://x.test/a.png")}body{display:none');
   await p.waitForTimeout(250);
   ok("link gambar berbahaya ditolak dengan pesan", (await props(p).getByText(/harus diawali https/).count()) === 1);
@@ -187,7 +187,7 @@ function ok(name, cond, detail = "") {
   await url.fill("https://cdn.example.com/hiasan.gif");
   await p.waitForTimeout(300);
   ok("link gambar valid masuk ke CSS", (await cssText(p)).includes('url("https://cdn.example.com/hiasan.gif")'));
-  ok("Image hanya satu per permukaan (tombol nonaktif)", await props(p).getByRole("button", { name: "Image", exact: true }).isDisabled());
+  ok("Image hanya satu per permukaan (tombol nonaktif)", await props(p).getByRole("button", { name: "Image (latar)", exact: true }).isDisabled());
   await props(p).getByRole("button", { name: /Hapus Scanlines/ }).click();
   await p.waitForTimeout(250);
   ok("hapus dekorasi menghilangkannya dari CSS", !(await cssText(p)).includes("repeating-linear-gradient"));

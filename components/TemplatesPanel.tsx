@@ -33,7 +33,7 @@ const Thumb = memo(function Thumb({ design }: { design: Design }) {
   );
 });
 
-function Card({ template, active, onPick }: { template: Template; active: boolean; onPick: (id: TemplateId) => void }) {
+function Card({ template, active, onPick, onNew }: { template: Template; active: boolean; onPick: (id: TemplateId) => void; onNew: (id: TemplateId) => void }) {
   return (
     <li
       className={`relative grid gap-2.5 rounded-panel border p-2.5 transition ${
@@ -55,6 +55,14 @@ function Card({ template, active, onPick }: { template: Template; active: boolea
       </div>
       <button
         type="button"
+        onClick={() => onNew(template.id)}
+        aria-label={`Buat desain baru dari template ${template.name}`}
+        className="relative z-10 h-9 w-full rounded-field border border-line-strong bg-surface text-xs font-semibold text-ink-2 transition hover:border-accent hover:text-accent active:scale-95"
+      >
+        Buat desain baru dari ini
+      </button>
+      <button
+        type="button"
         onClick={() => onPick(template.id)}
         aria-pressed={active}
         aria-label={`Pakai template ${template.name}`}
@@ -66,18 +74,21 @@ function Card({ template, active, onPick }: { template: Template; active: boolea
 
 interface Props {
   activeTemplate: TemplateId;
+  /** Terapkan template ke desain yang sedang dibuka. */
   onPick: (id: TemplateId) => void;
+  /** Buat desain baru dari template tanpa menyentuh desain yang sedang dibuka. */
+  onNew: (id: TemplateId) => void;
 }
 
-export function TemplatesPanel({ activeTemplate, onPick }: Props) {
+export function TemplatesPanel({ activeTemplate, onPick, onNew }: Props) {
   return (
     <div className="grid gap-4">
       <p className="text-sm text-ink-2">
-        Pilih template sebagai titik awal, lalu ubah lewat Layers dan Properties. Mengganti template bisa dibatalkan dengan Undo.
+        Klik template untuk memakainya di desain yang sedang dibuka (bisa dibatalkan dengan Undo), atau buat desain baru darinya supaya desainmu yang sekarang tetap aman. Setelah itu ubah lewat Layers dan Properties.
       </p>
       <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 xl:grid-cols-1">
         {TEMPLATES.map((t) => (
-          <Card key={t.id} template={t} active={activeTemplate === t.id} onPick={onPick} />
+          <Card key={t.id} template={t} active={activeTemplate === t.id} onPick={onPick} onNew={onNew} />
         ))}
       </ul>
     </div>

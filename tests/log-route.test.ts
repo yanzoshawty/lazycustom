@@ -102,3 +102,57 @@ describe("GET /api/log", () => {
     expect(res.headers.get("allow")).toBe("POST");
   });
 });
+
+
+describe("POST /api/log: perlindungan asal dan tipe", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const make = (headers: Record<string, string>) =>
+    new Request("http://localhost/api/log", {
+      method: "POST",
+      headers: { "x-forwarded-for": `10.9.9.${++ipCounter}`, ...headers },
+      body: JSON.stringify(valid),
+    });
+
+  it("menolak permintaan lintas situs", async () => {
+    for (const site of ["cross-site", "same-site"]) {
+      const res = await POST(make({ "content-type": "application/json", "sec-fetch-site": site }));
+      expect(res.status, site).toBe(403);
+    }
+  });
+
+  it("menerima permintaan dari asal sendiri dan dari sendBeacon (tanpa header asal)", async () => {
+    expect((await POST(make({ "content-type": "application/json", "sec-fetch-site": "same-origin" }))).status).toBe(204);
+    expect((await POST(make({ "content-type": "application/json" }))).status).toBe(204);
+  });
+
+  it.each(["text/plain", "application/x-www-form-urlencoded", "multipart/form-data", ""])("menolak tipe konten %j", async (type) => {
+    const res = await POST(make(type ? { "content-type": type } : {}));
+    expect(res.status).toBe(415);
+  });
+
+  it("semua jawaban tidak boleh disimpan di cache", async () => {
+    const ok = await POST(make({ "content-type": "application/json" }));
+    const bad = await POST(new Request("http://localhost/api/log", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "10.8.8.8" }, body: "{" }));
+    expect(ok.headers.get("cache-control")).toBe("no-store");
+    expect(bad.headers.get("cache-control")).toBe("no-store");
+    expect(GET().headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("pembatas laju memakai header Vercel, bukan X-Forwarded-For yang bisa dipalsukan", async () => {
+    const attacker = (i: number) =>
+      new Request("http://localhost/api/log", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-vercel-forwarded-for": "203.0.113.7", "x-forwarded-for": `1.1.1.${i}` },
+        body: JSON.stringify(valid),
+      });
+    const statuses: number[] = [];
+    for (let i = 0; i < 25; i++) statuses.push((await POST(attacker(i))).status);
+    expect(statuses.filter((s) => s === 204)).toHaveLength(20);
+    expect(statuses.filter((s) => s === 429)).toHaveLength(5);
+  });
+});

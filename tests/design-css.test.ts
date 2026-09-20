@@ -355,6 +355,48 @@ describe("kartu", () => {
   });
 });
 
+describe("jarak nominal", () => {
+  it("Sticker: nama dan chip nominal diberi jarak dan boleh turun baris", () => {
+    const d = clone("crystal");
+    d.sticker.amountGap = 14;
+    const st = generateCss(d).split("/* Sticker */")[1];
+    expect(st).toMatch(/#author-info \{[^}]*display: flex/);
+    expect(st).toMatch(/#author-info \{[^}]*flex-wrap: wrap/);
+    expect(st).toMatch(/#author-info \{[^}]*gap: 4px 14px/);
+  });
+
+  it("Super Chat: nama dan nominal bertumpuk dengan jarak vertikal", () => {
+    const d = clone("crystal");
+    d.superChat.amountGap = 6;
+    const sc = generateCss(d).split("/* Super Chat */")[1].split("/* Membership */")[0];
+    expect(sc).toMatch(/#header-content-primary-column \{[^}]*flex-direction: column/);
+    expect(sc).toMatch(/#header-content-primary-column \{[^}]*row-gap: 6px/);
+  });
+
+  it("jarak nol berarti tanpa celah, dan Membership tidak terpengaruh", () => {
+    const d = clone("crystal");
+    d.sticker.amountGap = 0;
+    expect(generateCss(d).split("/* Sticker */")[1]).toMatch(/gap: 4px 0px/);
+    expect(generateCss(d).split("/* Membership */")[1].split("/* Sticker */")[0]).not.toContain("#author-info");
+  });
+
+  it("semua template memberi jarak bawaan pada nominal", () => {
+    for (const t of TEMPLATES) {
+      expect(t.design.superChat.amountGap, t.id).toBeGreaterThan(0);
+      expect(t.design.sticker.amountGap, t.id).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("bar Super Chat", () => {
+  it("semua template menyembunyikannya secara bawaan", () => {
+    for (const t of TEMPLATES) {
+      expect(t.design.hideTicker, t.id).toBe(true);
+      expect(generateCss(t.design), t.id).toContain("yt-live-chat-ticker-renderer");
+    }
+  });
+});
+
 describe("animasi", () => {
   it("tidak membuat @keyframes dan animation saat mati", () => {
     const d = clone();

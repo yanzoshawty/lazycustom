@@ -89,6 +89,20 @@ describe("decode menolak masukan berbahaya atau rusak", () => {
   });
 });
 
+describe("payload yang mencoba mencemari objek", () => {
+  it("kunci __proto__ dan constructor di payload tidak mengubah Object.prototype dan tidak ikut ke hasil", async () => {
+    const d = JSON.parse(JSON.stringify(DEFAULT_DESIGN));
+    const text = JSON.stringify(d).replace(/^\{/, '{"__proto__":{"terkontaminasi":true},"constructor":{"prototype":{"terkontaminasi":true}},');
+    const r = await decodeDesign("j." + Buffer.from(text).toString("base64url"));
+    expect(({} as Record<string, unknown>).terkontaminasi).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(Object.prototype, "terkontaminasi")).toBe(false);
+    if (r.ok) {
+      expect(Object.keys(r.design)).not.toContain("__proto__");
+      expect((r.design as unknown as Record<string, unknown>).terkontaminasi).toBeUndefined();
+    }
+  });
+});
+
 describe("url dan hash", () => {
   it("membentuk dan membaca link Share", () => {
     const url = shareUrl("z.abc", { origin: "https://lazycustom.vercel.app", pathname: "/" });

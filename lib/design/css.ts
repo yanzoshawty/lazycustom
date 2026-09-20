@@ -1,6 +1,6 @@
 import { FONTS, fontImport } from "../fonts";
 import { pickEdge, rgba } from "../color";
-import type { Card, Decoration, Design, Fill, Surface } from "./model";
+import type { Anchor, Card, Decoration, Design, Fill, PanelImage, Surface } from "./model";
 
 /**
  * Generator CSS untuk Browser Source OBS (model desain v2).
@@ -56,6 +56,17 @@ interface Layer {
   repeat: string;
 }
 
+/**
+ * Posisi background dari anchor 9 titik dan jarak dari tepi. Selalu bentuk dua nilai supaya valid untuk
+ * semua kombinasi: "kiri atau atas" memakai jarak dari tepi itu, "tengah" memakai 50% ditambah geseran,
+ * "kanan atau bawah" memakai 100% dikurangi jarak.
+ */
+function anchorPosition(anchor: Anchor, x: number, y: number): string {
+  const h = anchor.endsWith("left") ? `${x}px` : anchor.endsWith("right") ? `calc(100% - ${x}px)` : `calc(50% + ${x}px)`;
+  const v = anchor.startsWith("top") ? `${y}px` : anchor.startsWith("bottom") ? `calc(100% - ${y}px)` : `calc(50% + ${y}px)`;
+  return `${h} ${v}`;
+}
+
 const CORNER_POS = ["left top", "right top", "left bottom", "right bottom"] as const;
 
 function decorationLayers(d: Decoration): Layer[] {
@@ -76,6 +87,10 @@ function decorationLayers(d: Decoration): Layer[] {
       { image: line, size: `${d.size}px ${d.thickness}px`, position, repeat: "no-repeat" },
       { image: line, size: `${d.thickness}px ${d.size}px`, position, repeat: "no-repeat" },
     ]);
+  }
+  if (d.kind === "image-pin") {
+    if (d.url === "") return [];
+    return [{ image: `url("${d.url}")`, size: `${d.width}px auto`, position: anchorPosition(d.anchor, d.offsetX, d.offsetY), repeat: "no-repeat" }];
   }
   if (d.kind === "scanlines") {
     const c = rgba(d.color, d.opacity);
@@ -202,39 +217,129 @@ function textShadow(d: Design): string | null {
   return dirs.map(([x, y]) => `${x * px}px ${y * px}px 0 ${c}`).join(", ");
 }
 
-function avatarClip(shape: Design["avatar"]["shape"], size: number): Decl[] {
-  if (shape === "circle") return [["border-radius", "50%"]];
-  if (shape === "rounded") return [["border-radius", `${Math.round(size * 0.28)}px`]];
-  if (shape === "hexagon") {
-    return [
-      ["border-radius", "0"],
-      ["clip-path", "polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)"],
-    ];
+function avatarShape(shape: Design["avatar"]["shape"], size: number): { host: Decl[]; img: Decl[] } {
+  if (shape === "circle") return { host: [["border-radius", "50%"]], img: [["border-radius", "50%"]] };
+  if (shape === "rounded") {
+    const r = `${Math.round(size * 0.28)}px`;
+    return { host: [["border-radius", r]], img: [["border-radius", r]] };
   }
-  return [["border-radius", "0"]];
+  if (shape === "hexagon") {
+    return {
+      host: [["border-radius", "0"]],
+      img: [
+        ["border-radius", "0"],
+        ["clip-path", "polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)"],
+      ],
+    };
+  }
+  return { host: [["border-radius", "0"]], img: [["border-radius", "0"]] };
 }
 
 function avatarRule(selector: string, d: Design, margin: string): string {
   const a = d.avatar;
   const ring = a.ringWidth > 0 && a.shape !== "hexagon" ? `0 0 0 ${a.ringWidth}px ${a.ringColor}` : "none";
-  return (
+  const shape = avatarShape(a.shape, a.size);
+  // Bentuk foto dipotong pada gambarnya, bukan pada wadah, supaya bingkai gambar boleh keluar dari wadah.
+  const parts = [
     rule(selector, [
       ["display", "block"],
       ["flex", "none"],
+      ["position", "relative"],
       ["width", `${a.size}px`],
       ["height", `${a.size}px`],
       ["margin", margin],
-      ["overflow", "hidden"],
+      ["overflow", "visible"],
       ["box-shadow", ring],
-      ...avatarClip(a.shape, a.size),
-    ]) +
-    "\n" +
+      ...shape.host,
+    ]),
     rule(`${selector} img`, [
+      ["display", "block"],
       ["width", "100%"],
       ["height", "100%"],
       ["object-fit", "cover"],
-    ])
-  );
+      ...shape.img,
+    ]),
+  ];
+  if (a.frame.url !== "") {
+    parts.push(
+      rule(`${selector}::after`, [
+        ["content", '""'],
+        ["position", "absolute"],
+        ["top", "50%"],
+        ["left", "50%"],
+        ["width", `${a.frame.scale}%`],
+        ["height", `${a.frame.scale}%`],
+        ["transform", "translate(-50%, -50%)"],
+        ["background", `url("${a.frame.url}") center / contain no-repeat`],
+        ["pointer-events", "none"],
+        ["z-index", "2"],
+      ]),
+    );
+  }
+  return parts.join("\n");
+}
+
+/**
+ * Gambar tetap di panel chat. Dipasang lewat empat pseudo-element yang pasti tersedia: dua di belakang
+ * pesan (renderer::before di atas latar panel, body::before di bawah semuanya) dan dua di depan
+ * (renderer::after, body::after). Posisi fixed mengikuti ukuran Browser Source di OBS.
+ */
+const PANEL_SLOTS = {
+  behind: [`${SEL.renderer}::before`, "body::before"],
+  front: [`${SEL.renderer}::after`, "body::after"],
+} as const;
+const SLOT_Z = { [`${SEL.renderer}::before`]: "-1", "body::before": "-1", [`${SEL.renderer}::after`]: "9", "body::after": "2147483000" } as Record<string, string>;
+
+function panelAnchor(a: Anchor, x: number, y: number): Decl[] {
+  const out: Decl[] = [];
+  const h = a.endsWith("left") ? "left" : a.endsWith("right") ? "right" : "center";
+  const v = a.startsWith("top") ? "top" : a.startsWith("bottom") ? "bottom" : "middle";
+  const transforms: string[] = [];
+  if (h === "left") out.push(["left", `${x}px`]);
+  else if (h === "right") out.push(["right", `${x}px`]);
+  else {
+    out.push(["left", `calc(50% + ${x}px)`]);
+    transforms.push("translateX(-50%)");
+  }
+  if (v === "top") out.push(["top", `${y}px`]);
+  else if (v === "bottom") out.push(["bottom", `${y}px`]);
+  else {
+    out.push(["top", `calc(50% + ${y}px)`]);
+    transforms.push("translateY(-50%)");
+  }
+  if (transforms.length) out.push(["transform", transforms.join(" ")]);
+  return out;
+}
+
+function panelImageRules(images: PanelImage[]): string[] {
+  const out: string[] = [];
+  const used: Record<"behind" | "front", number> = { behind: 0, front: 0 };
+  let usesRenderer = false;
+  for (const img of images) {
+    if (img.url === "") continue;
+    const slot = PANEL_SLOTS[img.layer][used[img.layer]];
+    if (!slot) continue;
+    used[img.layer] += 1;
+    if (slot.startsWith(SEL.renderer)) usesRenderer = true;
+    out.push(
+      rule(slot, [
+        ["content", '""'],
+        ["position", "fixed"],
+        ["z-index", SLOT_Z[slot]],
+        ["pointer-events", "none"],
+        ["width", `${img.width}px`],
+        ["height", `${img.height}px`],
+        ["background-image", `url("${img.url}")`],
+        ["background-repeat", "no-repeat"],
+        ["background-position", "center"],
+        ["background-size", img.fit],
+        ["opacity", String(img.opacity / 100)],
+        ...panelAnchor(img.anchor, img.offsetX, img.offsetY),
+      ]),
+    );
+  }
+  if (usesRenderer) out.unshift(rule(SEL.renderer, [["position", "relative"], ["isolation", "isolate"]]));
+  return out;
 }
 
 function rowDirection(d: Design): { direction: string; justify: string; alignItems: string } {
@@ -461,6 +566,9 @@ export function generateCss(d: Design): string {
   hidden.push(`${M} #menu`);
   out.push("/* Elemen yang disembunyikan */\n" + rule(hidden, [["display", "none"]]));
 
+  const panelImages = panelImageRules(d.panelImages);
+  if (panelImages.length) out.push("/* Gambar panel */\n" + panelImages.join("\n"));
+
   // Baris pesan
   const dir = rowDirection(d);
   const rowDecls: Decl[] = [
@@ -655,4 +763,14 @@ export function generateCss(d: Design): string {
   }
 
   return out.join("\n\n") + "\n";
+}
+
+/** Untuk tampilan di kotak kode: data URI gambar unggahan disingkat. Tombol salin tetap memakai CSS utuh. */
+export function shortenForDisplay(css: string): { text: string; shortened: number } {
+  let shortened = 0;
+  const text = css.replace(/url\("data:image\/([a-z]+);base64,([A-Za-z0-9+/=]+)"\)/g, (_m, type: string, data: string) => {
+    shortened += 1;
+    return `url("data:image/${type};base64,... ${Math.max(1, Math.round((data.length * 0.75) / 1024))} KB disingkat ...")`;
+  });
+  return { text, shortened };
 }

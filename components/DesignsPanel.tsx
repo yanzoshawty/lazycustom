@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Check, Copy, DownloadSimple, LinkSimple, Plus, Trash, UploadSimple, CopySimple } from "@phosphor-icons/react";
 import { copyText } from "@/lib/clipboard";
-import { parseDesign, type Design } from "@/lib/design/model";
+import { countUploadedImages, parseDesign, type Design } from "@/lib/design/model";
 import { encodeDesign, shareUrl } from "@/lib/design/share";
 import { designStore, MAX_DESIGNS, type Snapshot } from "@/lib/design/store";
 import type { ErrorCode } from "@/lib/errors";
@@ -11,7 +11,8 @@ import { report } from "@/lib/report";
 import { ErrorNotice } from "./ErrorNotice";
 import { Section } from "./controls";
 
-const MAX_IMPORT_BYTES = 100 * 1024;
+// Desain dengan gambar unggahan bisa mencapai beberapa ratus KB.
+const MAX_IMPORT_BYTES = 1_500_000;
 
 const buttonClass =
   "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-field border border-line-strong bg-surface px-4 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent active:scale-95 disabled:cursor-not-allowed disabled:opacity-45";
@@ -77,7 +78,7 @@ function DesignRow({ id, name, templateId, updatedAt, active, onDone }: Snapshot
   );
 }
 
-export function DesignsPanel({ snap, onNotice }: { snap: Snapshot; onNotice: (text: string) => void }) {
+export function DesignsPanel({ snap, onNotice, onImportDesign }: { snap: Snapshot; onNotice: (text: string) => void; onImportDesign: (design: Design) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [problem, setProblem] = useState<{ code: ErrorCode; ref: string | null } | null>(null);
   const [share, setShare] = useState<{ design: Design; url: string } | null>(null);
@@ -85,6 +86,7 @@ export function DesignsPanel({ snap, onNotice }: { snap: Snapshot; onNotice: (te
 
   const atLimit = snap.saved.length >= MAX_DESIGNS;
   const shareStale = share !== null && share.design !== snap.design;
+  const uploadedCount = countUploadedImages(snap.design);
 
   function fail(code: ErrorCode, error?: unknown, context?: Record<string, string | number | boolean>) {
     setProblem({ code, ref: report({ code, error, level: "warn", context }) });
@@ -152,7 +154,7 @@ export function DesignsPanel({ snap, onNotice }: { snap: Snapshot; onNotice: (te
       fail(result.code, undefined, { bytes: file.size });
       return;
     }
-    if (designStore.importDesign(result.design)) onNotice("Desain diimpor sebagai desain baru");
+    onImportDesign(result.design);
   }
 
   return (
@@ -173,7 +175,8 @@ export function DesignsPanel({ snap, onNotice }: { snap: Snapshot; onNotice: (te
             <button
               type="button"
               disabled={atLimit}
-              onClick={() => designStore.newDesign() && onNotice("Desain baru dibuat")}
+              onClick={() => designStore.newDesign("plain") && onNotice("Desain kosong dibuat")}
+              title="Mulai dari desain kosong (Plain)"
               className={`${buttonClass} h-9 px-3 text-xs`}
             >
               <Plus size={16} weight="bold" aria-hidden="true" />
@@ -194,6 +197,11 @@ export function DesignsPanel({ snap, onNotice }: { snap: Snapshot; onNotice: (te
         <p className="text-sm text-ink-2">
           Buat link berisi seluruh desainmu. Siapa pun yang membukanya mendapat salinan sendiri, tanpa akun dan tanpa server.
         </p>
+        {uploadedCount > 0 ? (
+          <p role="status" className="rounded-field bg-warn-soft px-3 py-2 text-sm text-ink">
+            {uploadedCount} gambar unggahan tidak ikut link Share karena terlalu besar. Ganti dengan link https supaya ikut terbawa, atau kirim desainmu lewat Export file.
+          </p>
+        ) : null}
         <button type="button" onClick={makeShare} className={`${buttonClass} w-fit`}>
           <LinkSimple size={18} weight="bold" aria-hidden="true" />
           Buat link Share

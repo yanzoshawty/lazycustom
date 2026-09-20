@@ -85,7 +85,7 @@ describe("Inspector", () => {
   it("slider ukuran font mengubah desain dengan kunci undo yang tetap", () => {
     const h = harness(designFromTemplate("crystal"));
     render(<Inspector design={h.design} layer="panel" edit={h.edit} />);
-    fireEvent.change(screen.getByLabelText("Ukuran font dasar"), { target: { value: "28" } });
+    fireEvent.change(screen.getByLabelText("Base font size"), { target: { value: "28" } });
     expect(h.design.fontSize).toBe(28);
     expect(h.calls[0].key).toBe("fontSize");
   });
@@ -136,7 +136,7 @@ describe("Inspector", () => {
     const h = harness(d);
     render(<Inspector design={h.design} layer="avatar" edit={h.edit} />);
     expect(screen.getByText(/Ring tidak tersedia untuk bentuk Hexagon/)).toBeInTheDocument();
-    expect(screen.queryByLabelText("Ketebalan ring")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ring width")).not.toBeInTheDocument();
   });
 
   describe("kartu", () => {

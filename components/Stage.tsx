@@ -197,7 +197,7 @@ export function Stage({ css, selected, onSelect, frameClassName }: Props) {
           <span className="max-sm:sr-only">Clear</span>
         </button>
         <label className="ml-auto inline-flex items-center gap-2 text-xs font-medium text-ink-2 max-sm:hidden">
-          <span className="max-[420px]:sr-only">Latar</span>
+          <span className="max-[420px]:sr-only">Backdrop</span>
           <select
             value={backdrop}
             onChange={(e) => setBackdrop(e.target.value as Backdrop)}
@@ -242,7 +242,7 @@ export function Stage({ css, selected, onSelect, frameClassName }: Props) {
           </button>
         ))}
         <label className="ml-1 inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-ink-3 sm:hidden">
-          Latar
+          Backdrop
           <select
             value={backdrop}
             onChange={(e) => setBackdrop(e.target.value as Backdrop)}

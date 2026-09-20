@@ -1,4 +1,4 @@
-import { parseDesign, type Design } from "./model";
+import { parseDesign, stripUploadedImages, type Design } from "./model";
 
 /**
  * Link Share: desain dikodekan di bagian hash URL (#d=...), jadi tidak pernah dikirim
@@ -53,8 +53,9 @@ async function pipe(bytes: Uint8Array, stream: { writable: WritableStream; reada
   return out;
 }
 
+/** Gambar unggahan dari komputer tidak ikut link Share (terlalu besar). Hanya gambar dari link https yang dibawa. */
 export async function encodeDesign(design: Design): Promise<string> {
-  const bytes = new TextEncoder().encode(JSON.stringify(design));
+  const bytes = new TextEncoder().encode(JSON.stringify(stripUploadedImages(design).design));
   if (typeof CompressionStream !== "undefined") {
     try {
       const packed = await pipe(bytes, new CompressionStream("deflate-raw"), MAX_DECODED);
@@ -97,7 +98,8 @@ export async function decodeDesign(encoded: string): Promise<DecodeResult> {
     return { ok: false, code: "SHARE_INVALID" };
   }
   const parsed = parseDesign(json);
-  return parsed.ok ? { ok: true, design: parsed.design } : { ok: false, code: "SHARE_INVALID" };
+  // Link Share tidak boleh membawa gambar tertanam, walau lolos skema.
+  return parsed.ok ? { ok: true, design: stripUploadedImages(parsed.design).design } : { ok: false, code: "SHARE_INVALID" };
 }
 
 export function shareUrl(encoded: string, where: { origin: string; pathname: string }): string {

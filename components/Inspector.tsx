@@ -4,7 +4,10 @@ import { FONT_IDS, FONTS } from "@/lib/fonts";
 import { contrastRatio } from "@/lib/color";
 import { ANIMATION_STYLES, EASINGS, type AnimationStyle, type Card, type Design, type LayerId, type Surface } from "@/lib/design/model";
 import { layerById } from "@/lib/design/layers";
+import { dataImageChars } from "@/lib/design/model";
 import { ColorField, FillField, Hint, Section, SelectField, Segmented, SliderField, ToggleField } from "./controls";
+import { ImageBudgetContext, ImageSourceField } from "./ImageSourceField";
+import { PanelImagesEditor } from "./PanelImagesEditor";
 import { SurfaceEditor } from "./SurfaceEditor";
 
 export type Edit = (fn: (d: Design) => Design, key?: string) => void;
@@ -59,7 +62,7 @@ function CardEditor({ kind, design, edit }: { kind: CardKey; design: Design; edi
       {kind !== "membership" ? (
         <Section title="Warna">
           <Segmented
-            label="Sumber warna"
+            label="Color source"
             small
             value={card.colorMode}
             options={[
@@ -113,9 +116,9 @@ function CardEditor({ kind, design, edit }: { kind: CardKey; design: Design; edi
             ) : (
               <ColorField label="Warna nominal" value={card.amountColor} onChange={(amountColor) => patch((c) => ({ ...c, amountColor }), "amountColor")} />
             )}
-            <SliderField label="Jarak nama dan nominal" value={card.amountGap} min={0} max={24} unit="px" onChange={(amountGap) => patch((c) => ({ ...c, amountGap }), "amountGap")} />
+            <SliderField label="Amount gap" value={card.amountGap} min={0} max={24} unit="px" onChange={(amountGap) => patch((c) => ({ ...c, amountGap }), "amountGap")} />
             <SliderField label="Ukuran nominal" value={card.amountSize} min={80} max={200} unit="%" onChange={(amountSize) => patch((c) => ({ ...c, amountSize }), "amountSize")} />
-            <Segmented label="Ketebalan nominal" small value={card.amountWeight} options={WEIGHTS} onChange={(amountWeight) => patch((c) => ({ ...c, amountWeight }), "amountWeight")} />
+            <Segmented label="Amount weight" small value={card.amountWeight} options={WEIGHTS} onChange={(amountWeight) => patch((c) => ({ ...c, amountWeight }), "amountWeight")} />
           </>
         ) : null}
         {tierText ? null : (
@@ -147,7 +150,9 @@ export function Inspector({ design, layer, edit }: { design: Design; layer: Laye
         <h2 className="font-display text-lg font-bold tracking-tight text-ink">{info.label}</h2>
         <p className="text-sm text-ink-2">{info.hint}</p>
       </header>
-      <LayerFields design={design} layer={layer} edit={edit} />
+      <ImageBudgetContext.Provider value={dataImageChars(design)}>
+        <LayerFields design={design} layer={layer} edit={edit} />
+      </ImageBudgetContext.Provider>
     </div>
   );
 }
@@ -164,11 +169,14 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
               options={FONT_IDS.map((id) => ({ value: id, label: `${FONTS[id].label} (${FONTS[id].hint})` }))}
               onChange={(font) => edit((x) => ({ ...x, font }))}
             />
-            <SliderField label="Ukuran font dasar" value={d.fontSize} min={12} max={36} unit="px" onChange={(fontSize) => edit((x) => ({ ...x, fontSize }), "fontSize")} />
+            <SliderField label="Base font size" value={d.fontSize} min={12} max={36} unit="px" onChange={(fontSize) => edit((x) => ({ ...x, fontSize }), "fontSize")} />
           </Section>
-          <Section title="Latar panel">
-            <ColorField label="Warna latar" value={d.panel.color} onChange={(color) => edit((x) => ({ ...x, panel: { ...x.panel, color } }), "panel.color")} />
+          <Section title="Panel background">
+            <ColorField label="Background color" value={d.panel.color} onChange={(color) => edit((x) => ({ ...x, panel: { ...x.panel, color } }), "panel.color")} />
             <SliderField label="Opacity" value={d.panel.opacity} min={0} max={100} unit="%" hint="0% berarti transparan penuh, cocok untuk ditumpuk di atas gameplay." onChange={(opacity) => edit((x) => ({ ...x, panel: { ...x.panel, opacity } }), "panel.opacity")} />
+          </Section>
+          <Section title="Panel images">
+            <PanelImagesEditor images={d.panelImages} onChange={(panelImages, key) => edit((x) => ({ ...x, panelImages }), key)} />
           </Section>
           <Section title="Elemen bawaan YouTube">
             <ToggleField label="Sembunyikan header dan kolom kirim" hint="Biasanya tidak perlu tampil di OBS." checked={d.hideChrome} onChange={(hideChrome) => edit((x) => ({ ...x, hideChrome }))} />
@@ -180,7 +188,7 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
     case "row":
       return (
         <div className="grid gap-7">
-          <Section title="Susunan pesan">
+          <Section title="Message layout">
             <Segmented
               label="Layout"
               small
@@ -193,7 +201,7 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
             />
             <p className="text-xs text-ink-3">Inline: nama dan pesan sebaris. Stacked: pesan turun ke baris sendiri.</p>
             <Segmented
-              label="Posisi avatar"
+              label="Avatar position"
               small
               value={d.row.avatarPosition}
               options={[
@@ -204,7 +212,7 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
               onChange={(avatarPosition) => edit((x) => ({ ...x, row: { ...x.row, avatarPosition } }))}
             />
             <Segmented
-              label="Rata pesan"
+              label="Message align"
               small
               value={d.row.align}
               options={[
@@ -214,9 +222,9 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
               onChange={(align) => edit((x) => ({ ...x, row: { ...x.row, align } }))}
             />
           </Section>
-          <Section title="Jarak dan lebar">
-            <SliderField label="Jarak antar pesan" value={d.row.gap} min={0} max={24} unit="px" onChange={(gap) => edit((x) => ({ ...x, row: { ...x.row, gap } }), "row.gap")} />
-            <SliderField label="Lebar maksimum bubble" value={d.row.maxWidth} min={50} max={100} unit="%" onChange={(maxWidth) => edit((x) => ({ ...x, row: { ...x.row, maxWidth } }), "row.maxWidth")} />
+          <Section title="Spacing and width">
+            <SliderField label="Message gap" value={d.row.gap} min={0} max={24} unit="px" onChange={(gap) => edit((x) => ({ ...x, row: { ...x.row, gap } }), "row.gap")} />
+            <SliderField label="Max bubble width" value={d.row.maxWidth} min={50} max={100} unit="%" onChange={(maxWidth) => edit((x) => ({ ...x, row: { ...x.row, maxWidth } }), "row.maxWidth")} />
           </Section>
           <p className="rounded-field bg-surface-2 px-3 py-2 text-sm text-ink-2">
             Urutan Name, Badges, Timestamp, dan Message diatur dengan drag and drop di tab Layers.
@@ -231,7 +239,7 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
           <Section title="Bubble">
             <ToggleField label="Tampilkan bubble" hint="Matikan untuk teks tanpa latar." checked={d.bubble.show} onChange={(show) => edit((x) => ({ ...x, bubble: { ...x.bubble, show } }))} />
             {d.bubble.show ? (
-              <ToggleField label="Semburat warna per peran" hint="Member, moderator, dan owner mendapat sedikit warna sesuai peran." checked={d.bubble.roleTint} onChange={(roleTint) => edit((x) => ({ ...x, bubble: { ...x.bubble, roleTint } }))} />
+              <ToggleField label="Role tint" hint="Member, moderator, dan owner mendapat sedikit warna sesuai peran." checked={d.bubble.roleTint} onChange={(roleTint) => edit((x) => ({ ...x, bubble: { ...x.bubble, roleTint } }))} />
             ) : null}
           </Section>
           {ratio !== null && ratio < 4.5 ? (
@@ -270,12 +278,19 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
               onChange={(shape) => edit((x) => ({ ...x, avatar: { ...x.avatar, shape } }))}
             />
           </Section>
+          <Section title="Avatar frame">
+            <p className="text-xs text-ink-3">Gambar transparan (PNG atau GIF) yang menutupi foto profil sebagai bingkai. Berlaku juga di kartu Super Chat, Membership, dan Sticker.</p>
+            <ImageSourceField label="Link gambar bingkai" value={d.avatar.frame.url} onChange={(url) => edit((x) => ({ ...x, avatar: { ...x.avatar, frame: { ...x.avatar.frame, url } } }))} />
+            {d.avatar.frame.url !== "" ? (
+              <SliderField label="Ukuran bingkai" value={d.avatar.frame.scale} min={100} max={200} unit="%" hint="Di atas 100% bingkai lebih besar dari foto." onChange={(scale) => edit((x) => ({ ...x, avatar: { ...x.avatar, frame: { ...x.avatar.frame, scale } } }), "avatar.frame.scale")} />
+            ) : null}
+          </Section>
           <Section title="Ring">
             {d.avatar.shape === "hexagon" ? (
               <p className="text-xs text-ink-3">Ring tidak tersedia untuk bentuk Hexagon.</p>
             ) : (
               <>
-                <SliderField label="Ketebalan ring" value={d.avatar.ringWidth} min={0} max={4} unit="px" onChange={(ringWidth) => edit((x) => ({ ...x, avatar: { ...x.avatar, ringWidth } }), "avatar.ring")} />
+                <SliderField label="Ring width" value={d.avatar.ringWidth} min={0} max={4} unit="px" onChange={(ringWidth) => edit((x) => ({ ...x, avatar: { ...x.avatar, ringWidth } }), "avatar.ring")} />
                 {d.avatar.ringWidth > 0 ? (
                   <ColorField label="Warna ring" value={d.avatar.ringColor} onChange={(ringColor) => edit((x) => ({ ...x, avatar: { ...x.avatar, ringColor } }), "avatar.ringColor")} />
                 ) : null}
@@ -290,11 +305,11 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
         <div className="grid gap-7">
           <Section title="Gaya nama">
             <SliderField label="Ukuran" value={d.nameStyle.size} min={70} max={140} unit="%" onChange={(size) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, size } }), "name.size")} />
-            <Segmented label="Ketebalan" small value={d.nameStyle.weight} options={WEIGHTS} onChange={(weight) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, weight } }))} />
-            <ToggleField label="Huruf kapital" checked={d.nameStyle.uppercase} onChange={(uppercase) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, uppercase } }))} />
-            <SliderField label="Jarak huruf" value={d.nameStyle.spacing} min={0} max={4} onChange={(spacing) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, spacing } }), "name.spacing")} />
+            <Segmented label="Weight" small value={d.nameStyle.weight} options={WEIGHTS} onChange={(weight) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, weight } }))} />
+            <ToggleField label="Uppercase" checked={d.nameStyle.uppercase} onChange={(uppercase) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, uppercase } }))} />
+            <SliderField label="Letter spacing" value={d.nameStyle.spacing} min={0} max={4} onChange={(spacing) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, spacing } }), "name.spacing")} />
           </Section>
-          <Section title="Warna per peran">
+          <Section title="Role colors">
             {(["viewer", "member", "moderator", "owner"] as const).map((role) => (
               <ColorField
                 key={role}
@@ -333,16 +348,16 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
         <div className="grid gap-7">
           <Section title="Teks pesan">
             <ColorField label="Warna teks" value={d.text.color} onChange={(color) => edit((x) => ({ ...x, text: { ...x.text, color } }), "text.color")} />
-            <Segmented label="Ketebalan" small value={d.text.weight} options={WEIGHTS} onChange={(weight) => edit((x) => ({ ...x, text: { ...x.text, weight } }))} />
+            <Segmented label="Weight" small value={d.text.weight} options={WEIGHTS} onChange={(weight) => edit((x) => ({ ...x, text: { ...x.text, weight } }))} />
             <SliderField label="Ukuran" value={d.text.size} min={80} max={140} unit="%" onChange={(size) => edit((x) => ({ ...x, text: { ...x.text, size } }), "text.size")} />
-            <SliderField label="Tinggi baris" value={d.text.lineHeight} min={100} max={200} unit="%" onChange={(lineHeight) => edit((x) => ({ ...x, text: { ...x.text, lineHeight } }), "text.lineHeight")} />
+            <SliderField label="Line height" value={d.text.lineHeight} min={100} max={200} unit="%" onChange={(lineHeight) => edit((x) => ({ ...x, text: { ...x.text, lineHeight } }), "text.lineHeight")} />
           </Section>
           {ratio !== null && ratio < 4.5 ? (
             <Hint>Teks dan bubble hanya berkontras {ratio.toFixed(1)}:1. Ubah warna teks atau fill bubble supaya lebih terbaca.</Hint>
           ) : null}
-          <Section title="Tepi teks">
+          <Section title="Text edge">
             <Segmented
-              label="Gaya tepi"
+              label="Edge style"
               small
               value={d.edge}
               options={[

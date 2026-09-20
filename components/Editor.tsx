@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { ArrowArcLeft, ArrowArcRight } from "@phosphor-icons/react";
 import { copyText } from "@/lib/clipboard";
 import { generateCss } from "@/lib/design/css";
-import { designsEqual, type LayerId, type TemplateId } from "@/lib/design/model";
+import { designsEqual, remoteImageHosts, remoteImageUrls, stripRemoteImages, type Design, type LayerId, type TemplateId } from "@/lib/design/model";
 import { decodeDesign, readShareHash } from "@/lib/design/share";
 import { designStore } from "@/lib/design/store";
 import { templateById } from "@/lib/design/templates";
@@ -15,6 +15,7 @@ import { CopyButton, ExportPanel, type CopyState } from "./ExportPanel";
 import { Inspector, type Edit } from "./Inspector";
 import { LayersPanel } from "./LayersPanel";
 import { Logo } from "./Logo";
+import { RemoteImagesPrompt } from "./RemoteImagesPrompt";
 import { Stage } from "./Stage";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { ThemeToggle } from "./ThemeToggle";
@@ -72,6 +73,33 @@ function EditorInner() {
   const [copyRef, setCopyRef] = useState<string | null>(null);
   const codeRef = useRef<HTMLPreElement>(null);
   const handledShare = useRef(false);
+  // Desain dari orang lain yang memuat gambar dari server luar menunggu keputusan user sebelum dibuka.
+  const [pending, setPending] = useState<{ design: Design; source: "share" | "file" } | null>(null);
+
+  const openDesign = useCallback((design: Design, source: "share" | "file") => {
+    if (source === "share") return designStore.openShared(design);
+    return designStore.importDesign(design);
+  }, []);
+
+  // Desain tanpa gambar dari luar langsung dibuka. Yang memuatnya ditanyakan dulu.
+  const requestOpen = useCallback(
+    (design: Design, source: "share" | "file") => {
+      if (remoteImageUrls(design).length === 0) {
+        if (openDesign(design, source) && source === "file") toast("Desain diimpor sebagai desain baru");
+        return;
+      }
+      setPending({ design, source });
+    },
+    [openDesign, toast],
+  );
+
+  function choosePending(withImages: boolean) {
+    if (!pending) return;
+    const design = withImages ? pending.design : stripRemoteImages(pending.design).design;
+    const ok = openDesign(design, pending.source);
+    setPending(null);
+    if (ok && pending.source === "file") toast(withImages ? "Desain diimpor dengan gambar" : "Desain diimpor tanpa gambar dari luar");
+  }
 
   // Membuka link Share (#d=...) sekali saat halaman dimuat, lalu membersihkan alamatnya.
   useEffect(() => {
@@ -81,10 +109,10 @@ function EditorInner() {
     handledShare.current = true;
     history.replaceState(null, "", location.pathname + location.search);
     void decodeDesign(code).then((r) => {
-      if (r.ok) designStore.openShared(r.design);
+      if (r.ok) requestOpen(r.design, "share");
       else designStore.reportShareProblem(r.code);
     });
-  }, []);
+  }, [requestOpen]);
 
   const edit = useCallback<Edit>((fn, key) => {
     designStore.update((d) => {
@@ -109,6 +137,10 @@ function EditorInner() {
   function pickTemplate(id: TemplateId) {
     designStore.applyTemplate(id);
     toast(`Template ${templateById(id).name} diterapkan`);
+  }
+
+  function newFromTemplate(id: TemplateId) {
+    if (designStore.newDesign(id)) toast(`Desain baru dari template ${templateById(id).name} dibuat`);
   }
 
   async function copyCss() {
@@ -145,6 +177,9 @@ function EditorInner() {
       </header>
 
       <div className="grid gap-2.5 empty:hidden">
+        {pending ? (
+          <RemoteImagesPrompt source={pending.source} count={remoteImageUrls(pending.design).length} hosts={remoteImageHosts(pending.design)} onChoose={choosePending} />
+        ) : null}
         {snap.notice === "shared-opened" ? (
           <p role="status" className="flex items-start justify-between gap-3 rounded-field border border-accent/50 bg-accent-soft px-3.5 py-2.5 text-sm text-ink">
             <span>Desain dari link Share dibuka sebagai desain baru di My Designs. Desain lamamu tetap aman.</span>
@@ -190,9 +225,9 @@ function EditorInner() {
               ))}
             </div>
             <div role="tabpanel" id={`panel-${leftTab}`} aria-labelledby={`tab-${leftTab}`} className={`min-w-0 ${leftHidden}`}>
-              {leftTab === "templates" ? <TemplatesPanel activeTemplate={design.templateId} onPick={pickTemplate} /> : null}
+              {leftTab === "templates" ? <TemplatesPanel activeTemplate={design.templateId} onPick={pickTemplate} onNew={newFromTemplate} /> : null}
               {leftTab === "layers" ? <LayersPanel design={design} selected={selected} onSelect={selectLayer} edit={edit} /> : null}
-              {leftTab === "designs" ? <DesignsPanel snap={snap} onNotice={toast} /> : null}
+              {leftTab === "designs" ? <DesignsPanel snap={snap} onNotice={toast} onImportDesign={(d) => requestOpen(d, "file")} /> : null}
             </div>
           </div>
         </aside>

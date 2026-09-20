@@ -18,16 +18,16 @@ export function SurfaceEditor({ surface, onChange, hideFill = false, fillLabel =
     <div className="grid gap-7">
       {hideFill ? null : (
         <Section title={fillLabel}>
-          <FillField label="Jenis fill" value={surface.fill} onChange={(fill) => onChange((s) => ({ ...s, fill }), "surface.fill")} />
+          <FillField label="Fill type" value={surface.fill} onChange={(fill) => onChange((s) => ({ ...s, fill }), "surface.fill")} />
         </Section>
       )}
 
-      <Section title="Bentuk">
+      <Section title="Shape">
         <SliderField label="Radius" value={surface.radius} min={0} max={32} unit="px" onChange={(radius) => onChange((s) => ({ ...s, radius }), "surface.radius")} />
         <SliderField label="Padding" value={surface.padding} min={4} max={24} unit="px" onChange={(padding) => onChange((s) => ({ ...s, padding }), "surface.padding")} />
       </Section>
 
-      <Section title="Border dan shadow">
+      <Section title="Border and shadow">
         <SliderField label="Border" value={surface.borderWidth} min={0} max={6} unit="px" onChange={(borderWidth) => onChange((s) => ({ ...s, borderWidth }), "surface.border")} />
         {surface.borderWidth > 0 ? (
           <ColorField label="Warna border" value={surface.borderColor} onChange={(borderColor) => onChange((s) => ({ ...s, borderColor }), "surface.borderColor")} />

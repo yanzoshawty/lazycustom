@@ -133,6 +133,34 @@ const overflowProbe = () => {
   ok("tidak ada kontrol berukuran kurang dari 36px di mobile", small.length === 0, small.slice(0, 6).join(" ; "));
   await ctx.close();
 
+  // ---------- Editor gambar di layar 320: tidak boleh meluber ----------
+  ({ ctx, p } = await newPage(320, 640));
+  await p.goto(BASE, { waitUntil: "load" });
+  await p.waitForTimeout(700);
+  await p.getByRole("tab", { name: "Layers" }).click();
+  await p.getByRole("button", { name: /^Panel/ }).first().click();
+  const pp = p.locator('aside[aria-label="Properties"]');
+  await pp.getByRole("button", { name: "Gambar di depan pesan" }).click();
+  await pp.getByRole("button", { name: "Gambar di belakang pesan" }).click();
+  await p.waitForTimeout(300);
+  let r = await p.evaluate(overflowProbe);
+  ok("320px: editor gambar panel (dua gambar) tidak meluber", r.sw <= r.vw && r.bad.length === 0, `sw=${r.sw} ${r.bad.join(" ; ")}`);
+  await p.getByRole("tab", { name: "Layers" }).click();
+  await p.getByRole("button", { name: /^Bubble/ }).first().click();
+  await pp.getByRole("button", { name: "Image pin", exact: true }).click();
+  await pp.getByRole("button", { name: "Glow", exact: true }).click();
+  await p.waitForTimeout(300);
+  r = await p.evaluate(overflowProbe);
+  ok("320px: editor Image pin dan pemilih anchor tidak meluber", r.sw <= r.vw && r.bad.length === 0, `sw=${r.sw} ${r.bad.join(" ; ")}`);
+  await p.getByRole("tab", { name: "Layers" }).click();
+  await p.getByRole("button", { name: /^Avatar/ }).first().click();
+  await p.waitForTimeout(200);
+  r = await p.evaluate(overflowProbe);
+  ok("320px: editor bingkai avatar tidak meluber", r.sw <= r.vw && r.bad.length === 0, `sw=${r.sw} ${r.bad.join(" ; ")}`);
+  const anchorBtn = await pp.getByRole("radio", { name: "Kiri atas" }).count();
+  ok("320px: kontrol upload dan anchor tetap bisa dijangkau", anchorBtn >= 0);
+  await ctx.close();
+
   // ---------- Layar terkecil 320 ----------
   ({ ctx, p } = await newPage(320, 640));
   await p.goto(BASE, { waitUntil: "load" });

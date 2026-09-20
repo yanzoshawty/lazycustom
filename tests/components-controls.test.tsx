@@ -92,10 +92,10 @@ describe("FillField", () => {
 
   it("mode Solid hanya menampilkan satu warna, Gradient menampilkan dua warna dan angle", () => {
     const { rerender } = render(<FillField label="Jenis fill" value={solid} onChange={() => undefined} />);
-    expect(screen.queryByText("Warna akhir")).not.toBeInTheDocument();
+    expect(screen.queryByText("End color")).not.toBeInTheDocument();
     expect(screen.queryByText("Angle")).not.toBeInTheDocument();
     rerender(<FillField label="Jenis fill" value={gradient} onChange={() => undefined} />);
-    expect(screen.getByText("Warna akhir")).toBeInTheDocument();
+    expect(screen.getByText("End color")).toBeInTheDocument();
     expect(screen.getByText("Angle")).toBeInTheDocument();
   });
 

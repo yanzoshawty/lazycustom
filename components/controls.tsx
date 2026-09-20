@@ -3,7 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { CaretDown } from "@phosphor-icons/react";
 import { normalizeHex } from "@/lib/color";
-import type { Fill } from "@/lib/design/model";
+import { ANCHORS, type Anchor, type Fill } from "@/lib/design/model";
 
 /** Kelompok kontrol dengan judul kecil ala panel instrumen. */
 export function Section({
@@ -339,13 +339,52 @@ export function FillField({ label, value, onChange, allowNone = true }: FillProp
           />
           {value.mode === "gradient" ? (
             <>
-              <ColorField label="Warna akhir" value={value.color2} onChange={(color2) => onChange({ ...value, color2 })} />
+              <ColorField label="End color" value={value.color2} onChange={(color2) => onChange({ ...value, color2 })} />
               <SliderField label="Angle" value={value.angle} min={0} max={360} step={5} unit={"\u00b0"} onChange={(angle) => onChange({ ...value, angle })} />
             </>
           ) : null}
           <SliderField label="Opacity" value={value.opacity} min={0} max={100} unit="%" onChange={(opacity) => onChange({ ...value, opacity })} />
         </>
       ) : null}
+    </div>
+  );
+}
+
+const ANCHOR_LABEL: Record<Anchor, string> = {
+  "top-left": "Kiri atas",
+  "top-center": "Tengah atas",
+  "top-right": "Kanan atas",
+  "middle-left": "Kiri tengah",
+  center: "Tengah",
+  "middle-right": "Kanan tengah",
+  "bottom-left": "Kiri bawah",
+  "bottom-center": "Tengah bawah",
+  "bottom-right": "Kanan bawah",
+};
+
+/** Pemilih posisi 3x3: tiap sel adalah satu titik tempat gambar menempel. */
+export function AnchorPicker({ label, value, onChange }: { label: string; value: Anchor; onChange: (a: Anchor) => void }) {
+  return (
+    <div className="grid gap-1.5">
+      <p id={`anchor-${label}`} className="text-sm font-medium text-ink">
+        {label}
+      </p>
+      <div role="radiogroup" aria-labelledby={`anchor-${label}`} className="grid w-fit grid-cols-3 gap-1 rounded-field bg-surface-2 p-1">
+        {ANCHORS.map((a) => (
+          <button
+            key={a}
+            type="button"
+            role="radio"
+            aria-checked={a === value}
+            aria-label={ANCHOR_LABEL[a]}
+            title={ANCHOR_LABEL[a]}
+            onClick={() => onChange(a)}
+            className="flex size-9 items-center justify-center rounded-[7px] text-ink-3 transition hover:text-ink aria-checked:bg-accent aria-checked:text-on-accent"
+          >
+            <span className="size-2 rounded-full bg-current" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

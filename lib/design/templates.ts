@@ -117,7 +117,8 @@ const BASE: Design = {
   row: { gap: 8, align: "left", maxWidth: 100, avatarPosition: "left" },
   message: { layout: "inline", order: DEFAULT_ORDER },
   bubble: { ...PLAIN_BUBBLE, show: false, roleTint: false },
-  avatar: { show: true, size: 32, shape: "circle", ringWidth: 0, ringColor: "#7DD3FC" },
+  avatar: { show: true, size: 32, shape: "circle", ringWidth: 0, ringColor: "#7DD3FC", frame: { url: "", scale: 130 } },
+  panelImages: [],
   nameStyle: {
     size: 100,
     weight: 700,

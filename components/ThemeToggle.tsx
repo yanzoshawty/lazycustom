@@ -31,7 +31,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-pressed={dark}
       aria-label="Mode gelap"
-      className="inline-flex size-10 items-center justify-center rounded-full border border-line bg-surface text-ink-2 transition hover:text-ink active:scale-95"
+      className="inline-flex size-10 items-center justify-center rounded-field border border-line-strong bg-surface text-ink-2 transition hover:border-accent hover:text-accent active:scale-95"
     >
       {dark ? <Sun size={20} weight="bold" /> : <Moon size={20} weight="bold" />}
     </button>

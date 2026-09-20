@@ -11,6 +11,10 @@ export const FONT_IDS = [
   "dm-sans",
   "space-grotesk",
   "jetbrains-mono",
+  "exo-2",
+  "chakra-petch",
+  "rajdhani",
+  "orbitron",
 ] as const;
 
 export type FontId = (typeof FONT_IDS)[number];
@@ -45,6 +49,15 @@ export const FONTS: Record<FontId, FontDef> = {
     stack: '"JetBrains Mono", monospace',
     google: "JetBrains Mono",
   },
+  "exo-2": { label: "Exo 2", hint: "Futuristik dan rapi", stack: '"Exo 2", sans-serif', google: "Exo 2" },
+  "chakra-petch": {
+    label: "Chakra Petch",
+    hint: "Sudut tegas, gaya sci-fi",
+    stack: '"Chakra Petch", sans-serif',
+    google: "Chakra Petch",
+  },
+  rajdhani: { label: "Rajdhani", hint: "Ramping dan teknis", stack: '"Rajdhani", sans-serif', google: "Rajdhani" },
+  orbitron: { label: "Orbitron", hint: "Lebar dan sci-fi", stack: '"Orbitron", sans-serif', google: "Orbitron" },
 };
 
 export function fontImport(id: FontId): string | null {

@@ -3,43 +3,52 @@
 
 /*
  * Token desain lazycustom.
- * Satu aksen (raspberry) untuk seluruh antarmuka. Warna-warni datang dari tema chat
- * di area preview, bukan dari UI editor.
- * Radius: tombol dan toggle berbentuk pil, panel 20px, kolom isian 12px.
+ * Palet: dark grey, crystal blue, dan putih. Satu aksen (crystal blue) untuk seluruh UI editor.
+ * Warna-warni datang dari tema chat di area preview, bukan dari UI editor.
+ * Bentuk: panel 16px, kolom isian dan tombol 10px, chip kecil pil. Ornamen futuristik
+ * dibatasi pada grid latar yang sangat halus dan bingkai HUD di area preview.
  */
 :root {
-  --bg: #f4f5f8;
-  --surface: #fcfcfd;
-  --surface-2: #eceef3;
-  --line: #d9dde6;
-  --text: #16181d;
-  --text-2: #444b5a;
-  --text-3: #5b6374;
-  --accent: #cc2c65;
-  --on-accent: #fcfcfd;
-  --accent-soft: #fbe3ec;
+  --bg: #edf1f5;
+  --surface: #f9fbfc;
+  --surface-2: #e4eaf0;
+  --line: #cbd4de;
+  --line-strong: #748190;
+  --text: #11161c;
+  --text-2: #3e4a58;
+  --text-3: #566373;
+  --accent: #066496;
+  --on-accent: #f9fbfc;
+  --accent-soft: #d3ecf8;
   --danger: #b3261e;
   --danger-soft: #fbe6e4;
   --warn: #8a5a00;
   --warn-soft: #fbefd2;
+  --edge: rgba(255, 255, 255, 0.7);
+  --grid: rgba(6, 100, 150, 0.06);
+  --glow: rgba(6, 100, 150, 0.1);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #0f1115;
-  --surface: #171a21;
-  --surface-2: #1f232c;
-  --line: #2a2f3a;
-  --text: #eceef3;
-  --text-2: #b4bacb;
-  --text-3: #959db0;
-  --accent: #f0699a;
-  --on-accent: #1a0b12;
-  --accent-soft: #3a1626;
+  --bg: #101317;
+  --surface: #171b21;
+  --surface-2: #1e232b;
+  --line: #2c333d;
+  --line-strong: #66727f;
+  --text: #eef2f6;
+  --text-2: #b7c0cc;
+  --text-3: #93a0af;
+  --accent: #7dd3fc;
+  --on-accent: #06202e;
+  --accent-soft: #12303f;
   --danger: #ff9b93;
   --danger-soft: #3a1917;
   --warn: #f2c96b;
   --warn-soft: #33270b;
+  --edge: rgba(255, 255, 255, 0.05);
+  --grid: rgba(125, 211, 252, 0.05);
+  --glow: rgba(125, 211, 252, 0.1);
   color-scheme: dark;
 }
 
@@ -48,6 +57,7 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-ink: var(--text);
   --color-ink-2: var(--text-2);
   --color-ink-3: var(--text-3);
@@ -59,10 +69,10 @@
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Bricolage Grotesque Variable", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-display: "Space Grotesk Variable", var(--font-geist-sans), ui-sans-serif, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --radius-field: 12px;
-  --radius-panel: 20px;
+  --radius-field: 10px;
+  --radius-panel: 16px;
 }
 
 html {
@@ -71,11 +81,27 @@ html {
 
 body {
   min-height: 100dvh;
-  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Grid latar yang sangat halus dengan cahaya lembut dari atas. Tidak menangkap klik. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(70% 45% at 50% 0%, var(--glow), transparent 70%),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:
+    auto,
+    44px 44px,
+    44px 44px;
 }
 
 :focus-visible {
@@ -90,6 +116,49 @@ input[type="range"] {
 ::selection {
   background: var(--accent);
   color: var(--on-accent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/*
+ * Grid yang dipakai sebagai tumpukan vertikal wajib boleh menyusut. Tanpa ini kolom "auto"
+ * tidak mau lebih sempit dari isi terlebarnya dan membuat halaman meluber di layar kecil.
+ */
+.grid:not([class*="grid-cols"]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Panel dasar: permukaan dengan garis tipis dan sorotan tepi atas. */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  box-shadow: inset 0 1px 0 var(--edge);
+}
+
+/* Bingkai HUD: siku tipis di keempat sudut area preview. */
+.hud-frame {
+  --tick: 14px;
+  --tick-w: 2px;
+  background-image:
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-size:
+    var(--tick) var(--tick-w), var(--tick-w) var(--tick),
+    var(--tick) var(--tick-w), var(--tick-w) var(--tick),
+    var(--tick) var(--tick-w), var(--tick-w) var(--tick),
+    var(--tick) var(--tick-w), var(--tick-w) var(--tick);
+  background-position:
+    left top, left top,
+    right top, right top,
+    left bottom, left bottom,
+    right bottom, right bottom;
 }
 
 /* Latar kotak-kotak untuk menandai area transparan di preview. */

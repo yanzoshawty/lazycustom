@@ -12,6 +12,10 @@ export type ErrorCode =
   | "STORAGE_BLOCKED"
   | "STORAGE_CORRUPT"
   | "URL_INVALID"
+  | "SHARE_INVALID"
+  | "SHARE_TOO_LARGE"
+  | "SHARE_FAILED"
+  | "DESIGN_LIMIT"
   | "PREVIEW_FAILED"
   | "RENDER_FAILED"
   | "PAGE_NOT_FOUND"
@@ -74,6 +78,30 @@ export const ERROR_CATALOG: Record<ErrorCode, ErrorInfo> = {
     body: "Kami tidak menemukan ID video di link itu.",
     action: "Salin link dari address bar saat halaman live terbuka, contoh: youtube.com/watch?v=...",
     severity: "error",
+  },
+  SHARE_INVALID: {
+    title: "Link Share tidak bisa dibuka",
+    body: "Link ini rusak, terpotong, atau bukan berasal dari lazycustom.",
+    action: "Minta pengirimnya membuat link Share baru, lalu salin utuh dari awal sampai akhir.",
+    severity: "error",
+  },
+  SHARE_TOO_LARGE: {
+    title: "Link Share terlalu besar",
+    body: "Isi link ini melebihi batas yang aman untuk dibuka.",
+    action: "Minta pengirimnya membuat link Share baru, atau kirim file desain lewat Export file.",
+    severity: "error",
+  },
+  SHARE_FAILED: {
+    title: "Link Share belum terbuat",
+    body: "Desainmu tidak bisa diubah menjadi link di browser ini.",
+    action: "Pakai Export file untuk berbagi desain, lalu kirim file .json-nya.",
+    severity: "error",
+  },
+  DESIGN_LIMIT: {
+    title: "Batas desain tercapai",
+    body: "My Designs menampung maksimal 20 desain di browser ini.",
+    action: "Hapus desain yang tidak dipakai, lalu coba lagi.",
+    severity: "warning",
   },
   PREVIEW_FAILED: {
     title: "Preview belum tampil",

@@ -57,7 +57,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ type: "spring", stiffness: 260, damping: 24 }}
-              className="rounded-full border border-line bg-ink px-4 py-2 text-sm font-medium text-bg shadow-lg"
+              className="rounded-field border border-line bg-ink px-4 py-2 text-sm font-medium text-bg shadow-lg"
             >
               {t.text}
             </motion.p>

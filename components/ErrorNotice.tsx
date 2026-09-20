@@ -45,7 +45,7 @@ export function ErrorNotice({ code, refId, onDismiss, children }: Props) {
           type="button"
           onClick={onDismiss}
           aria-label="Tutup pesan"
-          className="-mr-1 -mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-ink-2 hover:text-ink"
+          className="-mr-1 -mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-field text-ink-2 hover:text-ink"
         >
           <X size={16} weight="bold" />
         </button>

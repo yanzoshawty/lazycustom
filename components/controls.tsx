@@ -3,12 +3,26 @@
 import { useId, useState, type ReactNode } from "react";
 import { CaretDown } from "@phosphor-icons/react";
 import { normalizeHex } from "@/lib/color";
+import type { Fill } from "@/lib/design/model";
 
-/** Judul kelompok kontrol. */
-export function Group({ title, children }: { title?: string; children: ReactNode }) {
+/** Kelompok kontrol dengan judul kecil ala panel instrumen. */
+export function Section({
+  title,
+  action,
+  children,
+}: {
+  title?: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <section className="grid gap-4">
-      {title ? <h3 className="font-display text-base font-semibold text-ink">{title}</h3> : null}
+      {title ? (
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-ink-3">{title}</h3>
+          {action}
+        </div>
+      ) : null}
       {children}
     </section>
   );
@@ -107,7 +121,7 @@ export function ColorField({ label, value, onChange }: ColorProps) {
             setShowError(false);
             onChange(e.target.value.toUpperCase());
           }}
-          className="h-10 w-12 shrink-0 cursor-pointer rounded-field border border-line bg-surface p-1"
+          className="h-10 w-12 shrink-0 cursor-pointer rounded-field border border-line-strong bg-surface p-1"
         />
         <input
           id={id}
@@ -120,12 +134,12 @@ export function ColorField({ label, value, onChange }: ColorProps) {
           aria-describedby={showError ? errorId : undefined}
           onChange={(e) => handleText(e.target.value)}
           onBlur={handleBlur}
-          className="h-10 w-full min-w-0 rounded-field border border-line bg-surface px-3 font-mono text-sm uppercase text-ink placeholder:text-ink-3 aria-[invalid=true]:border-danger"
+          className="h-10 w-full min-w-0 rounded-field border border-line-strong bg-surface px-3 font-mono text-sm uppercase text-ink placeholder:text-ink-3 aria-[invalid=true]:border-danger"
         />
       </div>
       {showError ? (
         <p id={errorId} className="text-xs text-danger">
-          Kode warna harus 6 karakter, contoh #D6336C. Nilai sebelumnya kami kembalikan.
+          Kode warna harus 6 karakter, contoh #7DD3FC. Nilai sebelumnya kami kembalikan.
         </p>
       ) : null}
     </div>
@@ -154,7 +168,7 @@ export function Segmented<T extends string | number>({
   return (
     <fieldset className="grid min-w-0 gap-1.5">
       <legend className={hideLabel ? "sr-only" : "mb-1.5 text-sm font-medium text-ink"}>{label}</legend>
-      <div className="inline-flex max-w-full flex-wrap gap-1 rounded-full bg-surface-2 p-1">
+      <div className="inline-flex max-w-full flex-wrap gap-1 rounded-field bg-surface-2 p-1">
         {options.map((o) => (
           <label key={String(o.value)} className="relative">
             <input
@@ -166,8 +180,8 @@ export function Segmented<T extends string | number>({
               className="peer sr-only"
             />
             <span
-              className={`block cursor-pointer whitespace-nowrap rounded-full text-ink-2 transition peer-checked:bg-accent peer-checked:font-medium peer-checked:text-on-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent hover:text-ink peer-checked:hover:text-on-accent ${
-                small ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-sm"
+              className={`block cursor-pointer whitespace-nowrap rounded-[7px] text-ink-2 transition peer-checked:bg-accent peer-checked:font-semibold peer-checked:text-on-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent hover:text-ink peer-checked:hover:text-on-accent ${
+                small ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm"
               }`}
             >
               {o.label}
@@ -201,8 +215,8 @@ export function ToggleField({ label, hint, checked, onChange }: ToggleProps) {
           onChange={(e) => onChange(e.target.checked)}
           className="peer sr-only"
         />
-        <span className="absolute inset-0 rounded-full bg-ink-3 transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" />
-        <span className="absolute left-0.5 top-0.5 size-5 rounded-full bg-surface shadow transition-transform peer-checked:translate-x-5" />
+        <span className="absolute inset-0 rounded-[8px] bg-line-strong transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" />
+        <span className="absolute left-0.5 top-0.5 size-5 rounded-[6px] bg-surface shadow transition-transform peer-checked:translate-x-5" />
       </span>
     </label>
   );
@@ -227,7 +241,7 @@ export function SelectField<T extends string>({ label, value, options, onChange 
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value as T)}
-          className="h-11 w-full cursor-pointer appearance-none rounded-field border border-line bg-surface pl-3 pr-10 text-sm text-ink"
+          className="h-11 w-full cursor-pointer appearance-none rounded-field border border-line-strong bg-surface pl-3 pr-10 text-sm text-ink"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value}>
@@ -246,11 +260,92 @@ export function SelectField<T extends string>({ label, value, options, onChange 
   );
 }
 
+interface TextProps {
+  label: string;
+  value: string;
+  placeholder?: string;
+  hint?: string;
+  error?: string | null;
+  inputMode?: "text" | "url";
+  onChange: (value: string) => void;
+}
+
+export function TextField({ label, value, placeholder, hint, error, inputMode = "text", onChange }: TextProps) {
+  const id = useId();
+  const noteId = useId();
+  return (
+    <div className="grid gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-ink">
+        {label}
+      </label>
+      <input
+        id={id}
+        type="text"
+        inputMode={inputMode}
+        value={value}
+        placeholder={placeholder}
+        autoComplete="off"
+        spellCheck={false}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error || hint ? noteId : undefined}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-11 w-full min-w-0 rounded-field border border-line-strong bg-surface px-3 text-sm text-ink placeholder:text-ink-3 aria-[invalid=true]:border-danger"
+      />
+      {error ? (
+        <p id={noteId} className="text-xs text-danger">
+          {error}
+        </p>
+      ) : hint ? (
+        <p id={noteId} className="text-xs text-ink-3">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 /** Petunjuk non-blokir, misalnya peringatan kontras warna. */
 export function Hint({ children }: { children: ReactNode }) {
   return (
     <p role="status" className="rounded-field bg-warn-soft px-3 py-2 text-sm text-ink">
       {children}
     </p>
+  );
+}
+
+interface FillProps {
+  label: string;
+  value: Fill;
+  onChange: (fill: Fill) => void;
+  allowNone?: boolean;
+}
+
+/** Fill kosong, solid, atau gradient dengan opacity. Dipakai bubble, kartu, dan header kartu. */
+export function FillField({ label, value, onChange, allowNone = true }: FillProps) {
+  const modes = [
+    ...(allowNone ? [{ value: "none" as const, label: "None" }] : []),
+    { value: "solid" as const, label: "Solid" },
+    { value: "gradient" as const, label: "Gradient" },
+  ];
+  return (
+    <div className="grid gap-3">
+      <Segmented label={label} small options={modes} value={value.mode} onChange={(mode) => onChange({ ...value, mode })} />
+      {value.mode !== "none" ? (
+        <>
+          <ColorField
+            label={value.mode === "gradient" ? "Warna awal" : "Warna"}
+            value={value.color}
+            onChange={(color) => onChange({ ...value, color, ...(value.mode === "solid" ? { color2: color } : {}) })}
+          />
+          {value.mode === "gradient" ? (
+            <>
+              <ColorField label="Warna akhir" value={value.color2} onChange={(color2) => onChange({ ...value, color2 })} />
+              <SliderField label="Angle" value={value.angle} min={0} max={360} step={5} unit={"\u00b0"} onChange={(angle) => onChange({ ...value, angle })} />
+            </>
+          ) : null}
+          <SliderField label="Opacity" value={value.opacity} min={0} max={100} unit="%" onChange={(opacity) => onChange({ ...value, opacity })} />
+        </>
+      ) : null}
+    </div>
   );
 }

@@ -97,14 +97,14 @@ describe("Editor: template, edit, dan undo", () => {
     for (const v of ["21", "22", "23", "24"]) fireEvent.change(slider, { target: { value: v } });
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
-    expect(codeText()).toContain("font-size: 20px");
+    expect(codeText()).toContain("font-size: 5vw");
   });
 
   it("menambah dekorasi dari Properties bubble masuk ke CSS", () => {
     render(<Editor />);
     const props = screen.getByRole("complementary", { name: "Properties" });
     fireEvent.click(within(props).getByRole("button", { name: "Corner brackets" }));
-    expect(codeText()).toMatch(/background-size:[^;]*10px 2px/);
+    expect(codeText()).toMatch(/background-size:[^;]*2\.5vw max\(1px, 0\.5vw\)/);
   });
 });
 

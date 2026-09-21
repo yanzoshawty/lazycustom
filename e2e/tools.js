@@ -49,10 +49,10 @@ function ok(name, cond, detail = "") {
   ok("Animate all Rise masuk ke CSS untuk elemen", /lc-el-rise/.test(await code()) && /#author-name \{[^}]*animation: lc-el-rise/.test(await code()));
   await clear(); await send("Message"); await p.waitForTimeout(80);
   const names1 = await fr.evaluate(() => getComputedStyle([...document.querySelectorAll("yt-live-chat-text-message-renderer #author-name")].pop()).animationName);
-  const msgDelay = await fr.evaluate(() => getComputedStyle([...document.querySelectorAll("yt-live-chat-text-message-renderer #message")].pop()).animationDelay);
+  const msgDelay = await fr.evaluate(() => getComputedStyle([...document.querySelectorAll("yt-live-chat-text-message-renderer #message-container")].pop()).animationDelay);
   ok("animasi nama dan pesan benar-benar berjalan di preview", names1.includes("lc-el-rise"), names1);
   ok("jeda bertahap: pesan tertunda lebih lama dari nama", parseFloat(msgDelay) > 0, msgDelay);
-  const opac = await fr.evaluate(async () => { const el = [...document.querySelectorAll("yt-live-chat-text-message-renderer #message")].pop(); const out = []; for (let i = 0; i < 6; i++) { out.push(Number(getComputedStyle(el).opacity)); await new Promise((r) => setTimeout(r, 90)); } return out; });
+  const opac = await fr.evaluate(async () => { const el = [...document.querySelectorAll("yt-live-chat-text-message-renderer #message-container")].pop(); const out = []; for (let i = 0; i < 6; i++) { out.push(Number(getComputedStyle(el).opacity)); await new Promise((r) => setTimeout(r, 90)); } return out; });
   ok("opacity pesan naik selama animasi (terlihat bergerak)", opac[opac.length - 1] > opac[0], opac.join(","));
 
   // ---------- 3. Efek ----------

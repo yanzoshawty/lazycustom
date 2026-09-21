@@ -6,7 +6,11 @@ import { designFromTemplate, TEMPLATES } from "@/lib/design/templates";
 
 const FORBIDDEN = [/color-mix\(/, /:has\(/, /@layer/, /@container/, /@property/, /backdrop-filter/, /\bNaN\b/, /undefined/, /\[object/];
 
-const clone = (id = "crystal"): Design => designFromTemplate(id as never);
+const clone = (id = "crystal"): Design => {
+  const d = designFromTemplate(id as never);
+  d.row.autoScale = false;
+  return d;
+};
 
 describe.each(TEMPLATES)("generateCss: template $id", ({ design }) => {
   const css = generateCss(design);
@@ -85,8 +89,13 @@ describe("urutan bagian pesan", () => {
     d.timestamp.show = true;
     const css = generateCss(d);
     expect(css).toMatch(/yt-live-chat-author-chip \{\s*display: contents/);
-    expect(css).toMatch(/#message \{[^}]*order: 0 !important/);
+    expect(css).toMatch(/#message-container,\nyt-live-chat-text-message-renderer #hover-message \{[^}]*order: 0 !important/);
     expect(css).toMatch(/#chat-badges \{[^}]*order: 1 !important/);
+    // Struktur asli YouTube: tombol Top Fan mengikuti lencana, badge prepend mengikuti nama.
+    expect(css).toMatch(/#before-content-buttons > \* \{[^}]*order: 1 !important/);
+    expect(css).toMatch(/#prepend-chat-badges > \* \{[^}]*order: \d+ !important/);
+    // #message bukan anak #content, jadi tidak boleh membawa order sendiri.
+    expect(css).not.toMatch(/#message \{[^}]*order:/);
     expect(css).toMatch(/#author-name \{[^}]*order: 2 !important/);
     expect(css).toMatch(/#timestamp \{[^}]*order: 3 !important/);
   });
@@ -94,9 +103,9 @@ describe("urutan bagian pesan", () => {
   it("layout stacked memaksa pesan turun ke baris sendiri, inline memberi kolom teks", () => {
     const d = clone();
     d.message.layout = "stacked";
-    expect(generateCss(d)).toMatch(/#message \{[^}]*flex: 1 1 100% !important/);
+    expect(generateCss(d)).toMatch(/#message-container,[^{]*\{[^}]*flex: 1 1 100% !important/);
     d.message.layout = "inline";
-    expect(generateCss(d)).toMatch(/#message \{[^}]*flex: 1 1 8em !important/);
+    expect(generateCss(d)).toMatch(/#message-container,[^{]*\{[^}]*flex: 1 1 auto !important/);
   });
 
   it("menyembunyikan timestamp dan lencana saat dimatikan", () => {
@@ -105,7 +114,7 @@ describe("urutan bagian pesan", () => {
     d.badges.show = false;
     const css = generateCss(d);
     expect(css).toMatch(/#timestamp \{\s*display: none !important/);
-    expect(css).toMatch(/#chat-badges,\nyt-live-chat-text-message-renderer yt-live-chat-author-badge-renderer \{\s*display: none/);
+    expect(css).toMatch(/#chat-badges,\nyt-live-chat-text-message-renderer #before-content-buttons,\nyt-live-chat-text-message-renderer yt-live-chat-author-badge-renderer \{\s*display: none/);
   });
 
   it("memberi warna nama untuk setiap peran lewat tiga bentuk selector", () => {

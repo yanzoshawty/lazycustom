@@ -164,13 +164,17 @@ function badge(role){
 function photo(name){return '<yt-img-shadow id="author-photo"><img id="img" alt="" src="'+avatar(name)+'"></yt-img-shadow>';}
 function tierStyle(t){return ' style="--yt-live-chat-paid-message-primary-color:'+t[0]+';--yt-live-chat-paid-message-secondary-color:'+t[1]+';--yt-live-chat-paid-sticker-chip-background-color:'+t[0]+';color:'+t[2]+';"';}
 
+function topFan(role){
+  if(role!=='owner')return '';
+  return '<yt-button-view-model><button style="color:#fff;background:#7b3edb;border:0;border-radius:999px;padding:0 6px;font-size:11px;line-height:18px;font-weight:600">#1</button></yt-button-view-model>';
+}
 function msg(role){
   var name=role==='owner'?C.owner:pick(C.names,'n');
   var pool=role==='owner'?C.ownerTexts:role==='moderator'?C.modTexts:C.texts;
   var text=pick(pool,'t'+role);
   var attr=role==='viewer'?'':' author-type="'+role+'"';
   var cls=role==='viewer'?'':' class="'+role+'" type="'+role+'"';
-  return '<yt-live-chat-text-message-renderer'+attr+'>'+photo(name)+'<div id="content"><span id="timestamp">'+time()+'</span><yt-live-chat-author-chip><span id="author-name"'+cls+'>'+esc(name)+'</span><span id="chat-badges">'+badge(role)+'</span></yt-live-chat-author-chip><span id="message">'+esc(text)+'</span></div><div id="menu"></div></yt-live-chat-text-message-renderer>';
+  return '<yt-live-chat-text-message-renderer'+attr+'>'+photo(name)+'<div id="content"><span id="timestamp">'+time()+'</span><yt-live-chat-author-chip><span id="prepend-chat-badges"></span><span id="author-name"'+cls+'>'+esc(name)+'<span id="chip-badges"></span></span><span id="chat-badges">'+badge(role)+'</span></yt-live-chat-author-chip><div id="before-content-buttons">'+topFan(role)+'</div><span id="message-container"><span id="message">'+esc(text)+'</span></span><span id="hover-message"></span><span id="deleted-state"></span></div><div id="menu"></div></yt-live-chat-text-message-renderer>';
 }
 function superchat(){
   var name=pick(C.names,'n'),tier=pick(C.tiers,'tier'),amount=pick(C.amounts,'amt'),text=pick(C.scTexts,'sc');
@@ -244,13 +248,13 @@ function select(layer){
 }
 function setFree(on){
   freeOn=on;
-  freeEl.textContent=on?'yt-live-chat-text-message-renderer #author-name,yt-live-chat-text-message-renderer #message,yt-live-chat-text-message-renderer #timestamp,yt-live-chat-text-message-renderer #chat-badges{cursor:move!important;touch-action:none!important;outline:1px dashed rgba(53,179,245,.7)!important;outline-offset:2px!important}':'';
+  freeEl.textContent=on?'yt-live-chat-text-message-renderer #author-name,yt-live-chat-text-message-renderer #message-container,yt-live-chat-text-message-renderer #timestamp,yt-live-chat-text-message-renderer #chat-badges{cursor:move!important;touch-action:none!important;outline:1px dashed rgba(53,179,245,.7)!important;outline-offset:2px!important}':'';
 }
 function dragPartOf(t){
   var el=t&&t.nodeType===1?t:(t&&t.parentElement);
   if(!el||!el.closest)return null;
   if(el.closest('yt-live-chat-paid-message-renderer,yt-live-chat-membership-item-renderer,yt-live-chat-paid-sticker-renderer'))return null;
-  var m=el.closest('#message');if(m)return {part:'message',el:m};
+  var m=el.closest('#message-container');if(m)return {part:'message',el:m};
   var n=el.closest('#author-name');if(n)return {part:'name',el:n};
   var ts=el.closest('#timestamp');if(ts)return {part:'timestamp',el:ts};
   var b=el.closest('#chat-badges');if(b)return {part:'badges',el:b};

@@ -5,7 +5,11 @@ import { cssString } from "@/lib/design/fx";
 import { EFFECT_KINDS, ELEMENT_ANIMS, isSafeLabelText, parseDesign, type Design, type Effect, type Label } from "@/lib/design/model";
 import { designFromTemplate } from "@/lib/design/templates";
 
-const base = (): Design => designFromTemplate("crystal");
+const base = (): Design => {
+  const d = designFromTemplate("crystal");
+  d.row.autoScale = false;
+  return d;
+};
 const label = (o: Partial<Label> = {}): Label => ({
   id: "label-aaaa",
   text: "LIVE",
@@ -288,7 +292,7 @@ describe("kerangka grid", () => {
     d.labels = [label()];
     const css = section(generateCss(d), "Kerangka grid");
     expect(css).toMatch(/#author-name \{[^}]*grid-column: 1 \/ span 1[^}]*grid-row: 1 \/ span 1/);
-    expect(css).toMatch(/#message \{[^}]*grid-row: 2 \/ span 1/);
+    expect(css).toMatch(/#message-container \{[^}]*grid-row: 2 \/ span 1/);
     expect(css).toContain("yt-live-chat-author-chip::before");
     expect(css).toContain("yt-live-chat-author-chip::after");
   });
@@ -330,13 +334,13 @@ describe("kerangka bebas", () => {
 
   it("pesan dibatasi lebar dan jumlah barisnya", () => {
     const css = section(generateCss(freeDesign()), "Kerangka bebas");
-    expect(css).toMatch(/#message \{[^}]*width: 260px[^}]*-webkit-line-clamp: 3/);
+    expect(css).toMatch(/#message-container \{[^}]*width: 260px[^}]*-webkit-line-clamp: 3/);
   });
 
   it("lebar pesan 0 berarti mengikuti sisa lebar bubble", () => {
     const d = freeDesign();
     d.message.free.parts.message.w = 0;
-    expect(section(generateCss(d), "Kerangka bebas")).toMatch(/#message \{[^}]*width: calc\(100% - 20px\)/);
+    expect(section(generateCss(d), "Kerangka bebas")).toMatch(/#message-container \{[^}]*width: calc\(100% - 20px\)/);
   });
 
   it("bubble per peran tidak mengubah padding di mode bebas", () => {

@@ -422,6 +422,10 @@ export const designSchema = z.object({
     gap: z.number().int().min(0).max(24),
     align: z.enum(["left", "right"]),
     maxWidth: z.number().int().min(50).max(100),
+    /** Ukuran chat ikut lebar Browser Source: semua panjang px dikonversi ke vw terhadap lebar acuan. */
+    autoScale: z.boolean().default(true),
+    /** Lebar panel (px) tempat desain ini terlihat persis seperti nilai px-nya. */
+    refWidth: z.number().int().min(200).max(1920).default(400),
     avatarPosition: z.enum(["left", "right", "top"]),
   }),
   message: z.object({

@@ -149,7 +149,7 @@ function ok(name, cond, detail = "") {
   await p.waitForTimeout(300);
   const after = await order();
   ok("tombol panah memindahkan bagian", after.join("|") === "Timestamp|Name|Message text|Badges", after.join("|"));
-  ok("urutan baru masuk ke CSS (message order: 2)", /#message \{[^}]*order: 2 !important/.test(await cssText(p)));
+  ok("urutan baru masuk ke CSS (message order: 2)", /#message-container,[^{]*\{[^}]*order: 2 !important/.test(await cssText(p)));
   // drag & drop dengan mouse
   const handle = p.getByRole("button", { name: "Seret Timestamp untuk mengubah urutan" });
   const target = p.getByRole("button", { name: "Seret Badges untuk mengubah urutan" });

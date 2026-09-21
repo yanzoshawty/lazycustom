@@ -240,6 +240,24 @@ function LayerFields({ design: d, layer, edit, dragMode, onDragMode }: Required<
           <Section title="Spacing and width">
             <SliderField label="Message gap" value={d.row.gap} min={0} max={24} unit="px" onChange={(gap) => edit((x) => ({ ...x, row: { ...x.row, gap } }), "row.gap")} />
             <SliderField label="Max bubble width" value={d.row.maxWidth} min={50} max={100} unit="%" onChange={(maxWidth) => edit((x) => ({ ...x, row: { ...x.row, maxWidth } }), "row.maxWidth")} />
+            <ToggleField
+              label="Auto scale with panel width"
+              hint="Teks, avatar, dan bubble ikut membesar atau mengecil saat lebar Browser Source di OBS diubah."
+              checked={d.row.autoScale}
+              onChange={(autoScale) => edit((x) => ({ ...x, row: { ...x.row, autoScale } }), "row.autoScale")}
+            />
+            {d.row.autoScale ? (
+              <SliderField
+                label="Reference width"
+                value={d.row.refWidth}
+                min={200}
+                max={1200}
+                step={10}
+                unit="px"
+                hint="Isi lebar Browser Source di OBS dengan angka ini agar ukurannya persis seperti preview. Lebih lebar atau lebih sempit akan diskalakan."
+                onChange={(refWidth) => edit((x) => ({ ...x, row: { ...x.row, refWidth } }), "row.refWidth")}
+              />
+            ) : null}
           </Section>
           {d.message.layout === "grid" || d.message.layout === "free" ? (
             <BubbleLayoutEditor design={d} edit={edit} dragMode={dragMode} onDragMode={onDragMode} />

@@ -160,7 +160,7 @@ const BASE: Design = {
   hideTicker: true,
   edge: "soft",
   animation: { style: "slide-up", duration: 360, easing: "smooth" },
-  row: { gap: 8, align: "left", maxWidth: 100, avatarPosition: "left" },
+  row: { gap: 8, align: "left", maxWidth: 100, autoScale: true, refWidth: 400, avatarPosition: "left" },
   message: { layout: "inline", order: DEFAULT_ORDER, grid: DEFAULT_GRID, free: DEFAULT_FREE },
   elements: DEFAULT_ELEMENTS,
   effects: [],

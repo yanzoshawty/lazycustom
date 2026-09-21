@@ -23,7 +23,11 @@ const JPG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10]);
 const WEBP = new Uint8Array([0x52, 0x49, 0x46, 0x46, 4, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]);
 const PNG_URI = toDataUri("image/png", PNG);
 
-const clone = (): Design => designFromTemplate("plain");
+const clone = (): Design => {
+  const d = designFromTemplate("plain");
+  d.row.autoScale = false;
+  return d;
+};
 const panelImg = (o: Partial<PanelImage> = {}): PanelImage => ({
   id: "logo-1", url: "https://cdn.example.com/logo.png", layer: "front", anchor: "top-right", width: 120, height: 60, offsetX: 10, offsetY: 8, opacity: 90, fit: "contain", ...o,
 });

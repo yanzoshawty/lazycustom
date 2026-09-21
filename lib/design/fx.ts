@@ -24,6 +24,8 @@ export interface FxHelpers {
   surfaceDecls: (s: Surface) => Decl[];
   pseudoRules: (selector: string, s: Surface) => string[];
   SEL: { text: string; paid: string; member: string; sticker: string; chip: string };
+  flexInset: (decls: Decl[]) => Decl[];
+  GAP_HALF: string;
 }
 
 /**
@@ -61,7 +63,7 @@ const EL_KEYFRAMES: Record<Exclude<ElementAnimStyle, "none">, string> = {
 };
 
 function elementSelector(id: ElementId, M: string): string {
-  return { avatar: `${M} #author-photo`, name: `${M} #author-name`, badges: `${M} #chat-badges`, timestamp: `${M} #timestamp`, message: `${M} #message` }[id];
+  return { avatar: `${M} #author-photo`, name: `${M} #author-name`, badges: `${M} #chat-badges`, timestamp: `${M} #timestamp`, message: `${M} #message-container` }[id];
 }
 
 /* ---------- Efek ---------- */
@@ -144,8 +146,8 @@ function partSelectors(M: string, chip: string): PartSlot[] {
   return [
     { part: "timestamp", selector: `${M} #timestamp` },
     { part: "name", selector: `${M} #author-name` },
-    { part: "badges", selector: `${M} #chat-badges` },
-    { part: "message", selector: `${M} #message` },
+    { part: "badges", selector: `${M} #chat-badges, ${M} #before-content-buttons > *` },
+    { part: "message", selector: `${M} #message-container` },
     // Label memakai pseudo-element chip yang berisi display: contents, jadi ikut menjadi item #content.
     { part: "label1", selector: `${M} ${chip}::before` },
     { part: "label2", selector: `${M} ${chip}::after` },
@@ -181,6 +183,7 @@ export function fxCss(d: Design, h: FxHelpers): string[] {
     let decls = h.surfaceDecls(o.surface);
     // Di mode bebas koordinat dihitung dari tepi bubble, jadi padding tidak boleh berubah per peran.
     if (d.message.layout === "free") decls = decls.filter(([p]) => p !== "padding");
+    else if (d.message.layout === "inline" || d.message.layout === "stacked") decls = h.flexInset(decls);
     roleParts.push(rule(sel, decls));
     roleParts.push(...h.pseudoRules(sel, o.surface));
     // Gambar dan ring milik bubble utama tidak ikut ke peran yang tidak memilikinya.
@@ -283,7 +286,7 @@ export function fxCss(d: Design, h: FxHelpers): string[] {
       ["letter-spacing", `${l.spacing * 0.5}px`],
       ["line-height", "1.3"],
       ["white-space", "nowrap"],
-      ["margin", "0"],
+      ["margin", layout === "inline" || layout === "stacked" ? `0 ${h.GAP_HALF}` : "0"],
     ];
     if (layout === "inline" || layout === "stacked") decls.push(["order", l.position === "start" ? "-1" : "9"]);
     textParts.push(rule(selector, decls));

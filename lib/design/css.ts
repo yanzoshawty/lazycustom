@@ -167,6 +167,38 @@ export function shapeClip(s: Pick<Surface, "shape" | "cut">): string | null {
   return null;
 }
 
+/**
+ * Jarak antar bagian pesan tidak memakai column-gap, karena gap juga berlaku untuk item flex
+ * anonim: YouTube menyisipkan karakter tak terlihat (U+200B) di antara elemen, dan tiap teks itu
+ * menjadi item order 0 di depan baris. Sebagai gantinya setiap bagian yang tampil membawa
+ * setengah celah di kiri dan kanan, dan padding bubble dikurangi sebesar itu.
+ */
+export const GAP_HALF = "0.225em";
+export const flexInset = (decls: Decl[]): Decl[] =>
+  decls.map(([p, v]): Decl => {
+    const m = p === "padding" ? /^(\d+)px (\d+)px$/.exec(v) : null;
+    return m ? [p, `${m[1]}px calc(${m[2]}px - ${GAP_HALF})`] : [p, v];
+  });
+
+/**
+ * Skala otomatis: setiap panjang px di luar string dan url() (termasuk url @import) diubah ke vw terhadap lebar
+ * acuan. Lebar Browser Source di OBS sama dengan lebar viewport, jadi seluruh chat (teks, avatar,
+ * padding, radius, bayangan) ikut membesar atau mengecil dan pemenggalan barisnya tidak berubah.
+ * Garis tipis (1 sampai 2px) tidak dibiarkan lebih kecil dari 1px supaya tidak hilang.
+ */
+export function scaleLengths(css: string, refWidth: number): string {
+  return css.replace(
+    /("(?:[^"\\]|\\.)*")|(url\([^)]*\))|(-?\d*\.?\d+)px\b/g,
+    (m: string, str?: string, url?: string, num?: string) => {
+      if (str || url || num === undefined) return m;
+      const v = parseFloat(num);
+      if (v === 0) return m;
+      const vw = `${+((v / refWidth) * 100).toFixed(4)}vw`;
+      return v >= 1 && v <= 2 ? `max(1px, ${vw})` : vw;
+    },
+  );
+}
+
 export function surfaceDecls(s: Surface, o: BackgroundOpts = {}): Decl[] {
   const clip = shapeClip(s);
   return [
@@ -642,7 +674,7 @@ export function generateCss(d: Design): string {
     ["flex-wrap", "wrap"],
     ["align-items", "baseline"],
     ["justify-content", d.row.align === "right" ? "flex-end" : "flex-start"],
-    ["column-gap", "0.45em"],
+    ["column-gap", "0"],
     ["row-gap", "0.1em"],
     ["min-width", "0"],
     ["max-width", `${d.row.maxWidth}%`],
@@ -665,8 +697,10 @@ export function generateCss(d: Design): string {
         shadow: "none",
         decorations: [],
       };
+  const flexRow = d.message.layout === "inline" || d.message.layout === "stacked";
+  const hm = flexRow ? `0 ${GAP_HALF}` : "0";
   const contentDecls: Decl[] = b.show
-    ? [...contentBase, ...surfaceDecls(visibleSurface)]
+    ? [...contentBase, ...(flexRow ? flexInset(surfaceDecls(visibleSurface)) : surfaceDecls(visibleSurface))]
     : [
         ...contentBase,
         ["background", "transparent"],
@@ -711,7 +745,7 @@ export function generateCss(d: Design): string {
             ["color", rgba(d.text.color, d.timestamp.opacity)],
             ["font-size", `${d.timestamp.size}%`],
             ["font-weight", "400"],
-            ["margin", "0"],
+            ["margin", hm],
           ])
         : rule(`${M} #timestamp`, [["display", "none"]])),
   );
@@ -719,6 +753,14 @@ export function generateCss(d: Design): string {
   const n = d.nameStyle;
   out.push(
     "/* Nama pengirim */\n" +
+      // Badge prepend (sebelum nama) harus mengikuti urutan nama, bukan tertinggal di order 0.
+      rule(`${M} #prepend-chat-badges`, [["display", "contents"]]) +
+      "\n" +
+      rule(`${M} #prepend-chat-badges > *`, [["order", idx("name")], ["margin", hm]]) +
+      "\n" +
+      // Span kosong milik YouTube tetap jadi item flex dan menambah column-gap, jadi disembunyikan saat kosong.
+      rule([`${M} #deleted-state:empty`, `${M} #show-original:empty`], [["display", "none"]]) +
+      "\n" +
       rule(`${M} #author-name`, [
         ["order", idx("name")],
         ["color", n.colors.viewer],
@@ -728,7 +770,7 @@ export function generateCss(d: Design): string {
         ["letter-spacing", `${n.spacing * 0.5}px`],
         ["background", "transparent"],
         ["padding", "0"],
-        ["margin", "0"],
+        ["margin", hm],
         ["border-radius", "0"],
       ]) +
       "\n" +
@@ -749,18 +791,39 @@ export function generateCss(d: Design): string {
             ["order", idx("badges")],
             ["display", "inline-flex"],
             ["align-self", "center"],
+            ["margin", hm],
+          ]) +
+          "\n" +
+          // Kosong berarti tidak ada lencana: jangan sisakan item yang membawa margin.
+          rule(`${M} #chat-badges:empty`, [["display", "none"]]) +
+          "\n" +
+          // Tombol Top Fan (#1) adalah elemen sendiri di luar chip, tepat setelahnya di DOM asli.
+          rule(`${M} #before-content-buttons`, [["display", "contents"]]) +
+          "\n" +
+          rule(`${M} #before-content-buttons > *`, [
+            ["order", idx("badges")],
+            ["align-self", "center"],
+            ["margin", hm],
           ]) +
           "\n" +
           rule(`${M} ${SEL.badge}`, [["vertical-align", "middle"]])
-        : rule([`${M} #chat-badges`, `${M} ${SEL.badge}`], [["display", "none"]])),
+        : rule([`${M} #chat-badges`, `${M} #before-content-buttons`, `${M} ${SEL.badge}`], [["display", "none"]])),
   );
 
   out.push(
     "/* Isi pesan */\n" +
-      rule(`${M} #message`, [
+      // Di DOM asli #message dibungkus #message-container, dan pembungkus itulah anak #content.
+      // Urutan dan lebar harus dipasang di pembungkus; #message sendiri hanya urusan teks.
+      rule([`${M} #message-container`, `${M} #hover-message`], [
         ["order", idx("message")],
-        ["flex", stacked ? "1 1 100%" : "1 1 8em"],
+        // Basis auto: lebar bubble dan keputusan turun baris sama-sama memakai lebar isi yang sebenarnya.
+        // Basis tetap (8em) membuat pesan pendek turun baris padahal bubble sudah selebar satu baris.
+        ["flex", stacked ? "1 1 100%" : "1 1 auto"],
         ["min-width", "0"],
+        ["margin", hm],
+      ]) +
+      "\n" +
+      rule(`${M} #message`, [
         ["color", d.text.color],
         ["font-size", `${d.text.size}%`],
         ["font-weight", String(d.text.weight)],
@@ -793,9 +856,10 @@ export function generateCss(d: Design): string {
     );
   }
 
-  out.push(...fxCss(d, { rule, surfaceDecls, pseudoRules, SEL }));
+  out.push(...fxCss(d, { rule, surfaceDecls, pseudoRules, SEL, flexInset, GAP_HALF }));
 
-  return out.join("\n\n") + "\n";
+  const css = out.join("\n\n") + "\n";
+  return d.row.autoScale ? scaleLengths(css, d.row.refWidth) : css;
 }
 
 /** Untuk tampilan di kotak kode: data URI gambar unggahan disingkat. Tombol salin tetap memakai CSS utuh. */

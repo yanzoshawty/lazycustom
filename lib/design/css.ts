@@ -1,5 +1,6 @@
 import { FONTS, fontImport } from "../fonts";
 import { pickEdge, rgba } from "../color";
+import { fxCss } from "./fx";
 import type { Anchor, Card, Decoration, Design, Fill, PanelImage, Surface } from "./model";
 
 /**
@@ -30,7 +31,7 @@ export const SEL = {
 } as const;
 
 const IMP = " !important";
-type Decl = [prop: string, value: string];
+export type Decl = [prop: string, value: string];
 
 function rule(selectors: string | string[], decls: Decl[]): string {
   const sel = Array.isArray(selectors) ? selectors.join(",\n") : selectors;
@@ -92,6 +93,21 @@ function decorationLayers(d: Decoration): Layer[] {
     if (d.url === "") return [];
     return [{ image: `url("${d.url}")`, size: `${d.width}px auto`, position: anchorPosition(d.anchor, d.offsetX, d.offsetY), repeat: "no-repeat" }];
   }
+  if (d.kind === "halftone") {
+    const c = rgba(d.color, d.opacity);
+    return [{ image: `radial-gradient(circle, ${c} 28%, transparent 30%)`, size: `${d.size}px ${d.size}px`, position: "0 0", repeat: "repeat" }];
+  }
+  if (d.kind === "stripes") {
+    const c = rgba(d.color, d.opacity);
+    return [
+      {
+        image: `repeating-linear-gradient(${d.angle}deg, ${c} 0px, ${c} ${d.width}px, transparent ${d.width}px, transparent ${d.width + d.gap}px)`,
+        size: "auto",
+        position: "0 0",
+        repeat: "repeat",
+      },
+    ];
+  }
   if (d.kind === "scanlines") {
     const c = rgba(d.color, d.opacity);
     return [
@@ -138,18 +154,33 @@ function backgroundDecls(s: Surface, o: BackgroundOpts = {}): Decl[] {
   ];
 }
 
-function surfaceDecls(s: Surface, o: BackgroundOpts = {}): Decl[] {
+/**
+ * Bentuk selain bulat dibuat dengan clip-path. Sudut dipotong lurus, jadi radius diabaikan. Efek yang
+ * keluar dari kotak (glow dan hard shadow) ikut terpotong, itu sifat clip-path.
+ */
+export function shapeClip(s: Pick<Surface, "shape" | "cut">): string | null {
+  const c = `${s.cut}px`;
+  if (s.shape === "slant") return `polygon(${c} 0, 100% 0, calc(100% - ${c}) 100%, 0 100%)`;
+  if (s.shape === "chamfer") {
+    return `polygon(${c} 0, calc(100% - ${c}) 0, 100% ${c}, 100% calc(100% - ${c}), calc(100% - ${c}) 100%, ${c} 100%, 0 calc(100% - ${c}), 0 ${c})`;
+  }
+  return null;
+}
+
+export function surfaceDecls(s: Surface, o: BackgroundOpts = {}): Decl[] {
+  const clip = shapeClip(s);
   return [
     ...backgroundDecls(s, o),
     ["border", s.borderWidth > 0 ? `${s.borderWidth}px solid ${s.borderColor}` : "0"],
-    ["border-radius", `${s.radius}px`],
+    ["border-radius", clip ? "0" : `${s.radius}px`],
+    ...(clip ? ([["clip-path", clip]] as Decl[]) : []),
     ["padding", `${Math.max(2, Math.round(s.padding * 0.6))}px ${s.padding}px`],
     ["box-shadow", boxShadows(s)],
   ];
 }
 
 /** ::before untuk gradient border dan ::after untuk gambar. Keduanya di belakang teks. */
-function pseudoRules(selector: string, s: Surface): string[] {
+export function pseudoRules(selector: string, s: Surface): string[] {
   const out: string[] = [];
   const ring = s.decorations.find((d) => d.kind === "gradient-border");
   if (ring && ring.kind === "gradient-border") {
@@ -761,6 +792,8 @@ export function generateCss(d: Design): string {
         KEYFRAMES[d.animation.style],
     );
   }
+
+  out.push(...fxCss(d, { rule, surfaceDecls, pseudoRules, SEL }));
 
   return out.join("\n\n") + "\n";
 }

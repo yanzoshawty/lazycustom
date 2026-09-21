@@ -1,4 +1,19 @@
-import type { Card, Decoration, Design, Fill, Surface, TemplateId } from "./model";
+import {
+  DEFAULT_AFFIXES,
+  DEFAULT_ELEMENTS,
+  DEFAULT_FREE,
+  DEFAULT_GRID,
+  DEFAULT_ROLE_BUBBLES,
+  type Card,
+  type Decoration,
+  type Design,
+  type Effect,
+  type ElementAnim,
+  type Fill,
+  type Label,
+  type Surface,
+  type TemplateId,
+} from "./model";
 
 /** Konstruktor kecil supaya definisi template tetap ringkas dan seragam. */
 const solid = (color: string, opacity = 100): Fill => ({ mode: "solid", color, color2: color, angle: 135, opacity });
@@ -51,6 +66,35 @@ const scan = (id: string, color: string, gap = 4, opacity = 10): Decoration => (
   color,
 });
 
+const halftone = (id: string, color: string, size = 8, opacity = 14): Decoration => ({ id, kind: "halftone", color, size, opacity });
+const stripes = (id: string, color: string, width = 6, gap = 10, angle = 45, opacity = 12): Decoration => ({
+  id,
+  kind: "stripes",
+  color,
+  width,
+  gap,
+  angle,
+  opacity,
+});
+const effect = (kind: Effect["kind"], speed: number, intensity: number): Effect => ({ id: `fx-${kind}`, kind, speed, intensity });
+const anim = (style: ElementAnim["style"], duration = 320, delay = 0): ElementAnim => ({ style, duration, delay });
+const tag = (id: string, text: string, roles: Label["roles"], color: string, bgColor: string, o: Partial<Label> = {}): Label => ({
+  id,
+  text,
+  roles,
+  position: "start",
+  color,
+  bgColor,
+  bgOpacity: 100,
+  size: 75,
+  weight: 700,
+  uppercase: true,
+  spacing: 1,
+  radius: 2,
+  padX: 6,
+  ...o,
+});
+
 const surface = (o: Partial<Surface> = {}): Surface => ({
   fill: solid("#1B1F27", 90),
   radius: 14,
@@ -60,6 +104,8 @@ const surface = (o: Partial<Surface> = {}): Surface => ({
   shadow: "none",
   shadowColor: "#000000",
   decorations: [],
+  shape: "round",
+  cut: 12,
   ...o,
 });
 
@@ -115,7 +161,12 @@ const BASE: Design = {
   edge: "soft",
   animation: { style: "slide-up", duration: 360, easing: "smooth" },
   row: { gap: 8, align: "left", maxWidth: 100, avatarPosition: "left" },
-  message: { layout: "inline", order: DEFAULT_ORDER },
+  message: { layout: "inline", order: DEFAULT_ORDER, grid: DEFAULT_GRID, free: DEFAULT_FREE },
+  elements: DEFAULT_ELEMENTS,
+  effects: [],
+  labels: [],
+  affixes: DEFAULT_AFFIXES,
+  roleBubbles: DEFAULT_ROLE_BUBBLES,
   bubble: { ...PLAIN_BUBBLE, show: false, roleTint: false },
   avatar: { show: true, size: 32, shape: "circle", ringWidth: 0, ringColor: "#7DD3FC", frame: { url: "", scale: 130 } },
   panelImages: [],
@@ -452,6 +503,248 @@ function aurora(): Design {
   });
 }
 
+
+/* ---------- Template bergaya: brutalism, game, dan futuristik dengan efek ---------- */
+
+/** Brutalism: kotak tegas, garis tebal, bayangan keras, warna mencolok, teks super tebal. */
+function brutal(): Design {
+  const bubble = surface({
+    fill: solid("#FFE94A", 100),
+    radius: 0,
+    padding: 10,
+    borderWidth: 4,
+    borderColor: "#0A0A0A",
+    shadow: "hard",
+    shadowColor: "#0A0A0A",
+    decorations: [bar("brutal-bar", "left", "#FF3EA5", 8)],
+  });
+  return make("brutal", "Brutal", {
+    font: "archivo-black",
+    fontSize: 19,
+    edge: "none",
+    animation: { style: "pop", duration: 320, easing: "bounce" },
+    row: { ...BASE.row, gap: 14 },
+    bubble: { ...bubble, show: true, roleTint: false },
+    nameStyle: {
+      ...BASE.nameStyle,
+      weight: 400,
+      uppercase: true,
+      spacing: 1,
+      colors: { viewer: "#0A0A0A", member: "#0B6B3A", moderator: "#1236B8", owner: "#B3002D" },
+    },
+    text: { ...BASE.text, color: "#0A0A0A", weight: 400 },
+    avatar: { ...BASE.avatar, shape: "square", size: 34, ringWidth: 3, ringColor: "#0A0A0A" },
+    elements: { ...DEFAULT_ELEMENTS, name: anim("wipe", 260), message: anim("rise", 300, 80) },
+    effects: [effect("shake", 6, 6)],
+    labels: [tag("label-member", "MEMBER", "member", "#FFE94A", "#0A0A0A", { radius: 0 })],
+    ...cards(bubble, {
+      mode: "custom",
+      header: solid("#FFD400"),
+      memberHeader: solid("#FF7AC0"),
+      name: "#0A0A0A",
+      amount: "#0A0A0A",
+      text: "#0A0A0A",
+    }),
+  });
+}
+
+/** Terinspirasi gaya menu game aksi bertema merah, hitam, dan putih: potongan miring, halftone, tipografi padat. */
+function phantom(): Design {
+  const bubble = surface({
+    fill: solid("#0B0B0D", 96),
+    radius: 0,
+    padding: 12,
+    shape: "slant",
+    cut: 16,
+    decorations: [ring("phantom-ring", "#FFFFFF", "#E60012", 2, 135, 95), halftone("phantom-dots", "#E60012", 7, 24)],
+  });
+  const owner = surface({
+    fill: solid("#E60012", 100),
+    radius: 0,
+    padding: 12,
+    shape: "slant",
+    cut: 18,
+    decorations: [ring("phantom-owner-ring", "#FFFFFF", "#0B0B0D", 2, 135, 95), halftone("phantom-owner-dots", "#0B0B0D", 7, 28)],
+  });
+  return make("phantom", "Phantom", {
+    font: "anton",
+    fontSize: 21,
+    edge: "none",
+    animation: { style: "slide-left", duration: 280, easing: "snappy" },
+    bubble: { ...bubble, show: true, roleTint: false },
+    nameStyle: {
+      ...BASE.nameStyle,
+      weight: 400,
+      uppercase: true,
+      spacing: 1,
+      colors: { viewer: "#FFFFFF", member: "#FF4B5C", moderator: "#7FD1FF", owner: "#FFD84A" },
+    },
+    text: { ...BASE.text, color: "#FFFFFF", weight: 400, lineHeight: 125 },
+    avatar: { ...BASE.avatar, shape: "hexagon", size: 36 },
+    elements: { ...DEFAULT_ELEMENTS, name: anim("pan", 220, 60), message: anim("wipe", 300, 140) },
+    effects: [effect("glitch", 6, 5), effect("shake", 5, 5)],
+    labels: [tag("label-member", "MEMBER", "member", "#FFFFFF", "#E60012", { radius: 0 })],
+    roleBubbles: { member: null, moderator: null, owner: { surface: owner, textColor: "#FFFFFF" } },
+    ...cards(bubble, {
+      mode: "custom",
+      header: solid("#E60012"),
+      memberHeader: solid("#2A2A30"),
+      name: "#FFFFFF",
+      amount: "#FFFFFF",
+      text: "#FFFFFF",
+    }),
+  });
+}
+
+/** Kotak dialog ala RPG: biru tua, garis putih ganda, nama di atas pesan (kerangka grid), teks muncul menyapu. */
+function quest(): Design {
+  const bubble = surface({
+    fill: grad("#10238A", "#050A3A", 96, 180),
+    radius: 6,
+    padding: 12,
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    decorations: [ring("quest-ring", "#B8C4FF", "#FFFFFF", 2, 180, 90), glow("quest-glow", "#5B6CFF", 12, 0, 30)],
+  });
+  return make("quest", "Quest", {
+    font: "press-start-2p",
+    fontSize: 14,
+    edge: "none",
+    animation: { style: "fade", duration: 240, easing: "linear" },
+    message: {
+      ...BASE.message,
+      layout: "grid",
+      grid: {
+        columns: [1],
+        rows: 2,
+        gap: 8,
+        cells: {
+          name: { col: 1, row: 1, colSpan: 1, rowSpan: 1, alignX: "start", alignY: "center" },
+          badges: { col: 1, row: 1, colSpan: 1, rowSpan: 1, alignX: "end", alignY: "center" },
+          timestamp: { col: 1, row: 1, colSpan: 1, rowSpan: 1, alignX: "end", alignY: "center" },
+          message: { col: 1, row: 2, colSpan: 1, rowSpan: 1, alignX: "stretch", alignY: "start" },
+          label1: { col: 1, row: 1, colSpan: 1, rowSpan: 1, alignX: "end", alignY: "center" },
+          label2: { col: 1, row: 1, colSpan: 1, rowSpan: 1, alignX: "end", alignY: "center" },
+        },
+      },
+    },
+    bubble: { ...bubble, show: true, roleTint: false },
+    nameStyle: {
+      ...BASE.nameStyle,
+      weight: 400,
+      size: 90,
+      colors: { viewer: "#FFD866", member: "#8CFFB0", moderator: "#8CC8FF", owner: "#FF9CB0" },
+    },
+    text: { ...BASE.text, color: "#FFFFFF", weight: 400, lineHeight: 165, size: 92 },
+    avatar: { ...BASE.avatar, shape: "square", size: 36, ringWidth: 3, ringColor: "#FFFFFF" },
+    elements: { ...DEFAULT_ELEMENTS, name: anim("pop", 260), message: anim("wipe", 800, 150) },
+    labels: [
+      tag("label-member", "MEMBER", "member", "#10238A", "#8CFFB0", { radius: 2, size: 62, spacing: 0 }),
+      tag("label-mod", "MOD", "moderator", "#10238A", "#8CC8FF", { radius: 2, size: 62, spacing: 0 }),
+    ],
+    ...cards(bubble, {
+      mode: "custom",
+      header: solid("#1A2FB5"),
+      memberHeader: solid("#0F5A3A"),
+      name: "#FFFFFF",
+      amount: "#FFD866",
+      text: "#FFFFFF",
+    }),
+  });
+}
+
+/** Esports atau gamer: HUD gelap, sudut chamfer, strip oranye, bubble berbeda untuk moderator dan owner. */
+function arena(): Design {
+  const orange = "#FF6A00";
+  const bubble = surface({
+    fill: solid("#0C1116", 92),
+    radius: 0,
+    padding: 10,
+    shape: "chamfer",
+    cut: 10,
+    decorations: [bar("arena-bar", "left", orange, 5), stripes("arena-stripes", orange, 6, 12, 45, 9), corners("arena-corners", orange, 8, 2)],
+  });
+  const mod = surface({ ...bubble, decorations: [bar("arena-mod-bar", "left", "#4DA3FF", 5), stripes("arena-mod-stripes", "#4DA3FF", 6, 12, 45, 9)] });
+  const owner = surface({
+    ...bubble,
+    fill: grad("#3A1D00", "#0C1116", 94, 90),
+    decorations: [bar("arena-own-bar", "left", "#FFB02E", 5), corners("arena-own-corners", "#FFB02E", 9, 2)],
+  });
+  return make("arena", "Arena", {
+    font: "chakra-petch",
+    fontSize: 20,
+    edge: "none",
+    animation: { style: "slide-left", duration: 260, easing: "snappy" },
+    bubble: { ...bubble, show: true, roleTint: false },
+    nameStyle: {
+      ...BASE.nameStyle,
+      weight: 700,
+      uppercase: true,
+      spacing: 1,
+      colors: { viewer: "#9FB4C4", member: "#3DF5C5", moderator: "#4DA3FF", owner: "#FFB02E" },
+    },
+    text: { ...BASE.text, color: "#EAF2F8", weight: 500 },
+    avatar: { ...BASE.avatar, shape: "hexagon", size: 36 },
+    elements: { ...DEFAULT_ELEMENTS, name: anim("pan", 220), message: anim("fade", 260, 80) },
+    effects: [effect("glow-pulse", 3, 3), effect("flicker", 3, 3)],
+    labels: [
+      tag("label-mod", "MOD", "moderator", "#04121F", "#4DA3FF", { radius: 0 }),
+      tag("label-host", "HOST", "owner", "#1A0F00", "#FFB02E", { radius: 0 }),
+    ],
+    roleBubbles: { member: null, moderator: { surface: mod, textColor: null }, owner: { surface: owner, textColor: null } },
+    ...cards(bubble, {
+      mode: "custom",
+      header: solid("#1A222B"),
+      memberHeader: solid("#0E3A33"),
+      name: "#EAF2F8",
+      amount: orange,
+      text: "#EAF2F8",
+    }),
+  });
+}
+
+/** Futuristik dengan efek: ring neon yang berkilau, nama bergetar glitch, cahaya berdenyut. */
+function cyber(): Design {
+  const bubble = surface({
+    fill: grad("#0A0F1F", "#14082B", 90, 135),
+    radius: 4,
+    padding: 10,
+    decorations: [
+      ring("cyber-ring", "#22D3EE", "#FF2BD6", 2, 135, 95),
+      glow("cyber-glow", "#22D3EE", 16, 0, 35),
+      scan("cyber-scan", "#22D3EE", 3, 8),
+      corners("cyber-corners", "#FF2BD6", 9, 2),
+    ],
+  });
+  return make("cyber", "Cyber", {
+    font: "orbitron",
+    fontSize: 17,
+    edge: "none",
+    animation: { style: "blur-in", duration: 400, easing: "smooth" },
+    bubble: { ...bubble, show: true, roleTint: true },
+    nameStyle: {
+      ...BASE.nameStyle,
+      weight: 600,
+      uppercase: true,
+      spacing: 1,
+      colors: { viewer: "#7CE9FF", member: "#7CFFB8", moderator: "#8DA8FF", owner: "#FFE066" },
+    },
+    text: { ...BASE.text, color: "#E8F7FF", weight: 500 },
+    avatar: { ...BASE.avatar, shape: "hexagon", size: 34 },
+    elements: { ...DEFAULT_ELEMENTS, name: anim("wipe", 300), message: anim("blur", 350, 100) },
+    effects: [effect("shimmer", 5, 5), effect("glitch", 5, 6), effect("glow-pulse", 4, 3)],
+    labels: [tag("label-member", "MEMBER", "member", "#04121F", "#7CFFB8", { radius: 2 })],
+    ...cards(bubble, {
+      mode: "tier",
+      header: grad("#0F3F5C", "#3A0F5C"),
+      memberHeader: grad("#0F7B62", "#0B5A4A"),
+      name: "#E8F7FF",
+      amount: "#FFFFFF",
+      text: "#E8F7FF",
+    }),
+  });
+}
+
 export interface Template {
   id: Exclude<TemplateId, "custom">;
   name: string;
@@ -469,6 +762,11 @@ export const TEMPLATES: Template[] = [
   { id: "pulse", name: "Pulse", tagline: "Bubble biru solid, animasi pop", design: pulse() },
   { id: "lite-glass", name: "Lite Glass", tagline: "Kaca tipis, ringan di atas gameplay", design: liteGlass() },
   { id: "frost", name: "Frost", tagline: "Bubble terang, teks gelap", design: frost() },
+  { id: "cyber", name: "Cyber", tagline: "Neon berkilau, nama glitch, cahaya berdenyut", design: cyber() },
+  { id: "phantom", name: "Phantom", tagline: "Gaya game aksi: merah, hitam, potongan miring", design: phantom() },
+  { id: "quest", name: "Quest", tagline: "Kotak dialog RPG dengan teks menyapu", design: quest() },
+  { id: "arena", name: "Arena", tagline: "HUD esports, bubble beda tiap peran", design: arena() },
+  { id: "brutal", name: "Brutal", tagline: "Brutalism: garis tebal, warna mencolok", design: brutal() },
   { id: "sticker-pop", name: "Sticker Pop", tagline: "Garis tebal dan hard shadow", design: stickerPop() },
   { id: "plain", name: "Plain", tagline: "Tanpa bubble, teks bersih", design: make("plain", "Plain", {}) },
 ];

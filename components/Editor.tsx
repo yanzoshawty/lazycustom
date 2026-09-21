@@ -1,10 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowArcLeft, ArrowArcRight } from "@phosphor-icons/react";
+import {
+  ArrowArcLeft,
+  ArrowArcRight,
+  FolderSimple,
+  Shapes,
+  SlidersHorizontal,
+  Sparkle,
+  SquaresFour,
+  Stack,
+  TextT,
+  UploadSimple,
+  type Icon,
+} from "@phosphor-icons/react";
 import { copyText } from "@/lib/clipboard";
 import { generateCss } from "@/lib/design/css";
-import { designsEqual, remoteImageHosts, remoteImageUrls, stripRemoteImages, type Design, type LayerId, type TemplateId } from "@/lib/design/model";
+import { designsEqual, type GridPart, remoteImageHosts, remoteImageUrls, stripRemoteImages, type Design, type LayerId, type TemplateId } from "@/lib/design/model";
 import { decodeDesign, readShareHash } from "@/lib/design/share";
 import { designStore } from "@/lib/design/store";
 import { templateById } from "@/lib/design/templates";
@@ -20,15 +32,24 @@ import { Stage } from "./Stage";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { ThemeToggle } from "./ThemeToggle";
 import { ToastProvider, useToast } from "./Toaster";
+import { AnimatePanel } from "./tools/AnimatePanel";
+import { ElementsPanel } from "./tools/ElementsPanel";
+import { TextPanel } from "./tools/TextPanel";
+import { UploadsPanel } from "./tools/UploadsPanel";
 
-type Tab = "templates" | "layers" | "designs";
+type Tab = "templates" | "elements" | "text" | "uploads" | "animate" | "layers" | "designs";
 type MobileTab = Tab | "properties";
 
-const TABS: Array<{ id: MobileTab; label: string }> = [
-  { id: "templates", label: "Templates" },
-  { id: "layers", label: "Layers" },
-  { id: "properties", label: "Properties" },
-  { id: "designs", label: "Designs" },
+/** Tools di sisi kiri ala Canva. Properties hanya jadi tab di layar sempit, di layar lebar ia punya kolom sendiri. */
+const TABS: Array<{ id: MobileTab; label: string; Icon: Icon }> = [
+  { id: "templates", label: "Templates", Icon: SquaresFour },
+  { id: "elements", label: "Elements", Icon: Shapes },
+  { id: "text", label: "Text", Icon: TextT },
+  { id: "uploads", label: "Uploads", Icon: UploadSimple },
+  { id: "animate", label: "Animate", Icon: Sparkle },
+  { id: "layers", label: "Layers", Icon: Stack },
+  { id: "designs", label: "Designs", Icon: FolderSimple },
+  { id: "properties", label: "Properties", Icon: SlidersHorizontal },
 ];
 
 const iconButton =
@@ -129,6 +150,25 @@ function EditorInner() {
     if (!window.matchMedia("(min-width: 1280px)").matches) setPanel("properties");
   }, []);
 
+  // Mode geser bagian langsung di preview. Hanya berlaku untuk layout Free.
+  const [dragMode, setDragMode] = useState(false);
+  const freeDrag = dragMode && design.message.layout === "free";
+
+  const movePart = useCallback(
+    (part: string, dx: number, dy: number) => {
+      const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(v)));
+      edit((d) => {
+        if (d.message.layout !== "free") return d;
+        const key = part as GridPart;
+        const cur = d.message.free.parts[key];
+        if (!cur) return d;
+        const next = { ...cur, x: clamp(cur.x + dx, -60, 600), y: clamp(cur.y + dy, -40, 300) };
+        return { ...d, message: { ...d.message, free: { ...d.message.free, parts: { ...d.message.free.parts, [key]: next } } } };
+      }, `free.${part}.drag`);
+    },
+    [edit],
+  );
+
   function pickTab(tab: MobileTab) {
     setPanel(tab);
     if (tab !== "properties") setLeftTab(tab);
@@ -199,6 +239,8 @@ function EditorInner() {
             css={css}
             selected={selected}
             onSelect={selectLayer}
+            freeDrag={freeDrag}
+            onMovePart={movePart}
             frameClassName="h-[22dvh] min-h-[150px] sm:h-[32dvh] xl:h-[min(66dvh,620px)]"
           />
         </div>
@@ -206,26 +248,31 @@ function EditorInner() {
         {/* Kolom kiri selalu tampil supaya bar tab tidak hilang saat Properties dibuka di layar sempit */}
         <aside aria-label="Templates, layers, dan desain" className="order-2 min-w-0 xl:order-1 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:self-start xl:overflow-y-auto">
           <div className="panel grid gap-4 p-3 sm:p-4">
-            <div role="tablist" aria-label="Panel editor" className="grid grid-cols-4 gap-1 rounded-field bg-surface-2 p-1 xl:grid-cols-3">
-              {TABS.map((t) => (
+            <div role="tablist" aria-label="Panel editor" className="grid grid-cols-4 gap-1 rounded-field bg-surface-2 p-1">
+              {TABS.map(({ id, label, Icon: TabIcon }) => (
                 <button
-                  key={t.id}
+                  key={id}
                   type="button"
                   role="tab"
-                  id={`tab-${t.id}`}
-                  aria-selected={t.id === "properties" ? panel === "properties" : leftTab === t.id && panel !== "properties"}
-                  aria-controls={t.id === "properties" ? "panel-properties" : `panel-${t.id}`}
-                  onClick={() => pickTab(t.id)}
-                  className={`h-10 rounded-[7px] px-1.5 text-xs font-semibold text-ink-2 transition hover:text-ink aria-selected:bg-accent aria-selected:text-on-accent sm:text-sm ${
-                    t.id === "properties" ? "xl:hidden" : ""
+                  id={`tab-${id}`}
+                  aria-selected={id === "properties" ? panel === "properties" : leftTab === id && panel !== "properties"}
+                  aria-controls={id === "properties" ? "panel-properties" : `panel-${id}`}
+                  onClick={() => pickTab(id)}
+                  className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-[7px] px-1 py-1.5 text-[11px] font-semibold leading-tight text-ink-2 transition hover:text-ink aria-selected:bg-accent aria-selected:text-on-accent ${
+                    id === "properties" ? "xl:hidden" : ""
                   }`}
                 >
-                  {t.label}
+                  <TabIcon size={18} weight="bold" aria-hidden="true" />
+                  {label}
                 </button>
               ))}
             </div>
             <div role="tabpanel" id={`panel-${leftTab}`} aria-labelledby={`tab-${leftTab}`} className={`min-w-0 ${leftHidden}`}>
               {leftTab === "templates" ? <TemplatesPanel activeTemplate={design.templateId} onPick={pickTemplate} onNew={newFromTemplate} /> : null}
+              {leftTab === "elements" ? <ElementsPanel design={design} edit={edit} onOpenLayer={selectLayer} onNotice={toast} /> : null}
+              {leftTab === "text" ? <TextPanel design={design} edit={edit} /> : null}
+              {leftTab === "uploads" ? <UploadsPanel design={design} edit={edit} onNotice={toast} /> : null}
+              {leftTab === "animate" ? <AnimatePanel design={design} edit={edit} onOpenLayer={selectLayer} /> : null}
               {leftTab === "layers" ? <LayersPanel design={design} selected={selected} onSelect={selectLayer} edit={edit} /> : null}
               {leftTab === "designs" ? <DesignsPanel snap={snap} onNotice={toast} onImportDesign={(d) => requestOpen(d, "file")} /> : null}
             </div>
@@ -234,7 +281,7 @@ function EditorInner() {
 
         <aside id="panel-properties" aria-label="Properties" className={`order-3 min-w-0 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:self-start xl:overflow-y-auto ${propertiesHidden}`}>
           <div className="panel p-3 sm:p-5">
-            <Inspector design={design} layer={selected} edit={edit} />
+            <Inspector design={design} layer={selected} edit={edit} dragMode={dragMode} onDragMode={setDragMode} />
           </div>
         </aside>
       </div>

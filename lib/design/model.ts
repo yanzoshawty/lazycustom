@@ -71,6 +71,11 @@ export const TEMPLATE_IDS = [
   "lite-glass",
   "sticker-pop",
   "aurora",
+  "brutal",
+  "phantom",
+  "quest",
+  "arena",
+  "cyber",
   "plain",
   "custom",
 ] as const;
@@ -135,6 +140,22 @@ export const decorationSchema = z.discriminatedUnion("kind", [
   }),
   z.object({
     id,
+    kind: z.literal("halftone"),
+    color: hex,
+    size: z.number().int().min(4).max(20),
+    opacity: z.number().int().min(3).max(60),
+  }),
+  z.object({
+    id,
+    kind: z.literal("stripes"),
+    color: hex,
+    width: z.number().int().min(2).max(20),
+    gap: z.number().int().min(2).max(30),
+    angle: z.number().int().min(0).max(180),
+    opacity: z.number().int().min(3).max(80),
+  }),
+  z.object({
+    id,
     kind: z.literal("image-pin"),
     url: imageSource,
     anchor: z.enum(ANCHORS),
@@ -153,6 +174,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
   "scanlines",
   "image",
   "image-pin",
+  "halftone",
+  "stripes",
 ];
 
 export const surfaceSchema = z.object({
@@ -164,6 +187,10 @@ export const surfaceSchema = z.object({
   shadow: z.enum(["none", "soft", "hard"]),
   shadowColor: hex,
   decorations: z.array(decorationSchema).max(8),
+  /** Bentuk sudut: bulat, miring (jajar genjang), atau chamfer (sudut dipotong). Selain bulat memakai clip-path. */
+  shape: z.enum(["round", "slant", "chamfer"]).default("round"),
+  /** Ukuran potongan sudut untuk bentuk miring dan chamfer (px). */
+  cut: z.number().int().min(4).max(28).default(12),
 });
 export type Surface = z.infer<typeof surfaceSchema>;
 
@@ -197,6 +224,171 @@ export const panelImageSchema = z.object({
   fit: z.enum(["contain", "cover"]),
 });
 export type PanelImage = z.infer<typeof panelImageSchema>;
+
+/* ---------- Animasi elemen, efek, teks sendiri, kerangka bubble ---------- */
+
+/** Animasi masuk per elemen, ala preset Canva. Dijalankan saat pesan baru muncul. */
+export const ELEMENT_ANIMS = ["none", "fade", "rise", "drop", "pan", "wipe", "pop", "blur"] as const;
+export type ElementAnimStyle = (typeof ELEMENT_ANIMS)[number];
+export const ELEMENT_IDS = ["avatar", "name", "badges", "timestamp", "message"] as const;
+export type ElementId = (typeof ELEMENT_IDS)[number];
+
+export const elementAnimSchema = z.object({
+  style: z.enum(ELEMENT_ANIMS),
+  duration: z.number().int().min(120).max(1200),
+  delay: z.number().int().min(0).max(1500),
+});
+export type ElementAnim = z.infer<typeof elementAnimSchema>;
+
+const noAnim = (): ElementAnim => ({ style: "none", duration: 400, delay: 0 });
+export const DEFAULT_ELEMENTS = {
+  avatar: noAnim(),
+  name: noAnim(),
+  badges: noAnim(),
+  timestamp: noAnim(),
+  message: noAnim(),
+};
+
+/** Efek berulang atau khusus. Tiap jenis punya target tetap supaya tidak saling menimpa. */
+export const EFFECT_KINDS = ["float", "pulse", "shimmer", "glow-pulse", "flicker", "glitch", "shake", "spin", "drift"] as const;
+export type EffectKind = (typeof EFFECT_KINDS)[number];
+
+export const effectSchema = z.object({
+  id,
+  kind: z.enum(EFFECT_KINDS),
+  speed: z.number().int().min(1).max(10),
+  intensity: z.number().int().min(1).max(10),
+});
+export type Effect = z.infer<typeof effectSchema>;
+
+/**
+ * Teks buatan user. Isinya boleh karakter apa pun kecuali karakter kontrol, karena generator
+ * menulisnya ke CSS sebagai escape heksadesimal, jadi tidak ada cara keluar dari string CSS.
+ */
+export function isSafeLabelText(value: string): boolean {
+  if (value.length > 24) return false;
+  if (/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(value)) return false;
+  try {
+    encodeURIComponent(value);
+  } catch {
+    return false;
+  }
+  return true;
+}
+const labelText = z.string().max(24).refine(isSafeLabelText, "text");
+
+export const labelSchema = z.object({
+  id,
+  text: labelText,
+  /** Peran yang menampilkan label. "viewer" berarti penonton biasa tanpa peran. */
+  roles: z.enum(["all", "viewer", "member", "moderator", "owner"]),
+  /** Di mode inline dan stacked: label di awal atau di akhir baris. Di mode grid dan free label ditempatkan lewat kerangka. */
+  position: z.enum(["start", "end"]),
+  color: hex,
+  bgColor: hex,
+  bgOpacity: pct,
+  size: z.number().int().min(60).max(140),
+  weight,
+  uppercase: z.boolean(),
+  spacing: z.number().int().min(0).max(4),
+  radius: z.number().int().min(0).max(12),
+  padX: z.number().int().min(0).max(12),
+});
+export type Label = z.infer<typeof labelSchema>;
+
+const affix = z.object({ prefix: labelText, suffix: labelText });
+export const affixesSchema = z.object({ name: affix, message: affix });
+export const DEFAULT_AFFIXES = { name: { prefix: "", suffix: "" }, message: { prefix: "", suffix: "" } };
+
+export const GRID_PARTS = ["timestamp", "name", "badges", "message", "label1", "label2"] as const;
+export type GridPart = (typeof GRID_PARTS)[number];
+
+const gridCell = z.object({
+  col: z.number().int().min(1).max(3),
+  row: z.number().int().min(1).max(3),
+  colSpan: z.number().int().min(1).max(3),
+  rowSpan: z.number().int().min(1).max(3),
+  alignX: z.enum(["start", "center", "end", "stretch"]),
+  alignY: z.enum(["start", "center", "end"]),
+});
+export type GridCell = z.infer<typeof gridCell>;
+
+export const gridSchema = z.object({
+  /** Lebar tiap kolom dalam satuan fr. Satu sampai tiga kolom. */
+  columns: z.array(z.number().int().min(1).max(8)).min(1).max(3),
+  rows: z.number().int().min(1).max(3),
+  gap: z.number().int().min(0).max(20),
+  cells: z.object({
+    timestamp: gridCell,
+    name: gridCell,
+    badges: gridCell,
+    message: gridCell,
+    label1: gridCell,
+    label2: gridCell,
+  }),
+});
+export type GridLayout = z.infer<typeof gridSchema>;
+
+const cell = (col: number, row: number, alignX: GridCell["alignX"] = "start", colSpan = 1): GridCell => ({
+  col,
+  row,
+  colSpan,
+  rowSpan: 1,
+  alignX,
+  alignY: "center",
+});
+export const DEFAULT_GRID: GridLayout = {
+  columns: [1, 3],
+  rows: 2,
+  gap: 6,
+  cells: {
+    name: cell(1, 1),
+    badges: cell(2, 1),
+    timestamp: cell(2, 1, "end"),
+    message: cell(1, 2, "stretch", 2),
+    label1: cell(1, 1),
+    label2: cell(2, 1, "end"),
+  },
+};
+
+const freePos = z.object({ x: z.number().int().min(-60).max(600), y: z.number().int().min(-40).max(300) });
+export const freeSchema = z.object({
+  width: z.number().int().min(160).max(640),
+  height: z.number().int().min(32).max(240),
+  parts: z.object({
+    timestamp: freePos,
+    name: freePos,
+    badges: freePos,
+    message: freePos.extend({ w: z.number().int().min(0).max(600), lines: z.number().int().min(1).max(6) }),
+    label1: freePos,
+    label2: freePos,
+  }),
+});
+export type FreeLayout = z.infer<typeof freeSchema>;
+export const DEFAULT_FREE: FreeLayout = {
+  width: 340,
+  height: 72,
+  parts: {
+    name: { x: 10, y: 8 },
+    badges: { x: 140, y: 8 },
+    timestamp: { x: 280, y: 8 },
+    message: { x: 10, y: 32, w: 320, lines: 2 },
+    label1: { x: 10, y: 8 },
+    label2: { x: 250, y: 8 },
+  },
+};
+
+/** Bubble khusus per peran. null berarti memakai bubble utama. Viewer selalu memakai bubble utama. */
+export const roleOverrideSchema = z.object({ surface: surfaceSchema, textColor: hex.nullable() });
+export type RoleOverride = z.infer<typeof roleOverrideSchema>;
+export const ROLE_IDS = ["member", "moderator", "owner"] as const;
+export type RoleId = (typeof ROLE_IDS)[number];
+export const roleBubblesSchema = z.object({
+  member: roleOverrideSchema.nullable(),
+  moderator: roleOverrideSchema.nullable(),
+  owner: roleOverrideSchema.nullable(),
+});
+export const DEFAULT_ROLE_BUBBLES = { member: null, moderator: null, owner: null };
 
 const name = z
   .string()
@@ -233,11 +425,15 @@ export const designSchema = z.object({
     avatarPosition: z.enum(["left", "right", "top"]),
   }),
   message: z.object({
-    layout: z.enum(["inline", "stacked"]),
+    layout: z.enum(["inline", "stacked", "grid", "free"]),
     order: z
       .array(z.enum(PART_IDS))
       .length(4)
       .refine((o) => new Set(o).size === 4, "order"),
+    /** Kerangka grid: dipakai saat layout "grid". */
+    grid: gridSchema.default(DEFAULT_GRID),
+    /** Kerangka bebas dengan posisi tiap bagian: dipakai saat layout "free". */
+    free: freeSchema.default(DEFAULT_FREE),
   }),
   bubble: surfaceSchema.extend({ show: z.boolean(), roleTint: z.boolean() }),
   avatar: z.object({
@@ -264,6 +460,18 @@ export const designSchema = z.object({
   }),
   timestamp: z.object({ show: z.boolean(), opacity: z.number().int().min(20).max(100), size: z.number().int().min(60).max(100) }),
   badges: z.object({ show: z.boolean() }),
+
+  /** Animasi masuk per elemen (avatar, nama, lencana, timestamp, isi pesan). */
+  elements: z
+    .object({ avatar: elementAnimSchema, name: elementAnimSchema, badges: elementAnimSchema, timestamp: elementAnimSchema, message: elementAnimSchema })
+    .default(DEFAULT_ELEMENTS),
+  /** Efek berulang atau khusus, paling banyak enam. */
+  effects: z.array(effectSchema).max(6).default([]),
+  /** Teks sendiri di bubble: paling banyak dua label, ditambah awalan dan akhiran untuk nama dan pesan. */
+  labels: z.array(labelSchema).max(2).default([]),
+  affixes: affixesSchema.default(DEFAULT_AFFIXES),
+  /** Bubble khusus untuk member, moderator, dan owner. */
+  roleBubbles: roleBubblesSchema.default(DEFAULT_ROLE_BUBBLES),
 
   /** Gambar tetap di panel chat (logo, banner, GIF). Paling banyak dua di belakang dan dua di depan pesan. */
   panelImages: z.array(panelImageSchema).max(4).default([]),
@@ -325,6 +533,7 @@ interface ImageHolder {
   sticker: { surface: { decorations: Array<{ kind: string; url?: string }> } };
   avatar: { frame: { url: string } };
   panelImages: Array<{ url: string }>;
+  roleBubbles: Record<string, { surface: { decorations: Array<{ kind: string; url?: string }> } } | null>;
 }
 
 /** Semua tempat yang menyimpan sumber gambar, sebagai objek yang punya properti `url`. */
@@ -334,6 +543,7 @@ function imageSlots(d: ImageHolder): Array<{ url?: string }> {
     ...d.superChat.surface.decorations,
     ...d.membership.surface.decorations,
     ...d.sticker.surface.decorations,
+    ...Object.values(d.roleBubbles).flatMap((r) => (r ? r.surface.decorations : [])),
     d.avatar.frame,
     ...d.panelImages,
   ].filter((x): x is { url: string; kind?: string } => typeof (x as { url?: unknown }).url === "string");
@@ -364,6 +574,27 @@ export function stripUploadedImages(design: Design): { design: Design; removed: 
     }
   }
   return { design: copy, removed };
+}
+
+/** Semua sumber gambar yang terisi (link maupun unggahan) di seluruh desain, tanpa duplikat, urut kemunculan. */
+export function imageSources(d: Design): string[] {
+  const urls = imageSlots(d)
+    .map((slot) => slot.url)
+    .filter((u): u is string => typeof u === "string" && u !== "");
+  return [...new Set(urls)];
+}
+
+/** Ganti satu sumber gambar di semua slot yang memakainya. Mengembalikan salinan dan jumlah slot yang berubah. */
+export function replaceImageSource(design: Design, from: string, to: string): { design: Design; changed: number } {
+  const copy = JSON.parse(JSON.stringify(design)) as Design;
+  let changed = 0;
+  for (const slot of imageSlots(copy)) {
+    if (slot.url === from) {
+      slot.url = to;
+      changed += 1;
+    }
+  }
+  return { design: copy, changed };
 }
 
 /** Alamat gambar dari luar (link https) yang dipakai desain, tanpa duplikat. Gambar unggahan tidak dihitung. */

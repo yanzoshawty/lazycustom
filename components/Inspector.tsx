@@ -8,6 +8,8 @@ import { dataImageChars } from "@/lib/design/model";
 import { ColorField, FillField, Hint, Section, SelectField, Segmented, SliderField, ToggleField } from "./controls";
 import { ImageBudgetContext, ImageSourceField } from "./ImageSourceField";
 import { PanelImagesEditor } from "./PanelImagesEditor";
+import { BubbleLayoutEditor } from "./BubbleLayoutEditor";
+import { RoleBubbleEditor } from "./RoleBubbleEditor";
 import { SurfaceEditor } from "./SurfaceEditor";
 
 export type Edit = (fn: (d: Design) => Design, key?: string) => void;
@@ -142,7 +144,16 @@ function CardEditor({ kind, design, edit }: { kind: CardKey; design: Design; edi
 
 /* ---------- Inspector ---------- */
 
-export function Inspector({ design, layer, edit }: { design: Design; layer: LayerId; edit: Edit }) {
+interface InspectorProps {
+  design: Design;
+  layer: LayerId;
+  edit: Edit;
+  /** Mode geser bagian langsung di preview (layout Free). */
+  dragMode?: boolean;
+  onDragMode?: (on: boolean) => void;
+}
+
+export function Inspector({ design, layer, edit, dragMode = false, onDragMode = () => undefined }: InspectorProps) {
   const info = layerById(layer);
   return (
     <div className="grid gap-6">
@@ -151,13 +162,13 @@ export function Inspector({ design, layer, edit }: { design: Design; layer: Laye
         <p className="text-sm text-ink-2">{info.hint}</p>
       </header>
       <ImageBudgetContext.Provider value={dataImageChars(design)}>
-        <LayerFields design={design} layer={layer} edit={edit} />
+        <LayerFields design={design} layer={layer} edit={edit} dragMode={dragMode} onDragMode={onDragMode} />
       </ImageBudgetContext.Provider>
     </div>
   );
 }
 
-function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerId; edit: Edit }) {
+function LayerFields({ design: d, layer, edit, dragMode, onDragMode }: Required<InspectorProps>) {
   switch (layer) {
     case "panel":
       return (
@@ -196,10 +207,14 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
               options={[
                 { value: "inline", label: "Inline" },
                 { value: "stacked", label: "Stacked" },
+                { value: "grid", label: "Grid" },
+                { value: "free", label: "Free" },
               ]}
               onChange={(layout) => edit((x) => ({ ...x, message: { ...x.message, layout } }))}
             />
-            <p className="text-xs text-ink-3">Inline: nama dan pesan sebaris. Stacked: pesan turun ke baris sendiri.</p>
+            <p className="text-xs text-ink-3">
+              Inline: nama dan pesan sebaris. Stacked: pesan turun ke baris sendiri. Grid: kerangka baris dan kolom buatanmu. Free: tiap bagian di koordinat sendiri.
+            </p>
             <Segmented
               label="Avatar position"
               small
@@ -226,9 +241,13 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
             <SliderField label="Message gap" value={d.row.gap} min={0} max={24} unit="px" onChange={(gap) => edit((x) => ({ ...x, row: { ...x.row, gap } }), "row.gap")} />
             <SliderField label="Max bubble width" value={d.row.maxWidth} min={50} max={100} unit="%" onChange={(maxWidth) => edit((x) => ({ ...x, row: { ...x.row, maxWidth } }), "row.maxWidth")} />
           </Section>
-          <p className="rounded-field bg-surface-2 px-3 py-2 text-sm text-ink-2">
-            Urutan Name, Badges, Timestamp, dan Message diatur dengan drag and drop di tab Layers.
-          </p>
+          {d.message.layout === "grid" || d.message.layout === "free" ? (
+            <BubbleLayoutEditor design={d} edit={edit} dragMode={dragMode} onDragMode={onDragMode} />
+          ) : (
+            <p className="rounded-field bg-surface-2 px-3 py-2 text-sm text-ink-2">
+              Urutan Name, Badges, Timestamp, dan Message diatur dengan drag and drop di tab Layers.
+            </p>
+          )}
         </div>
       );
 
@@ -248,10 +267,12 @@ function LayerFields({ design: d, layer, edit }: { design: Design; layer: LayerI
             </Hint>
           ) : null}
           {d.bubble.show ? (
-            <SurfaceEditor
-              surface={d.bubble}
-              onChange={(fn, key) => edit((x) => ({ ...x, bubble: { ...x.bubble, ...fn(x.bubble) } }), `bubble.${key}`)}
-            />
+            <RoleBubbleEditor design={d} edit={edit}>
+              <SurfaceEditor
+                surface={d.bubble}
+                onChange={(fn, key) => edit((x) => ({ ...x, bubble: { ...x.bubble, ...fn(x.bubble) } }), `bubble.${key}`)}
+              />
+            </RoleBubbleEditor>
           ) : (
             <p className="rounded-field bg-surface-2 px-3 py-2 text-sm text-ink-2">Nyalakan bubble untuk mengatur fill, border, dan dekorasi.</p>
           )}

@@ -26,6 +26,17 @@ npm run check        # typecheck, lint, tes, build (jalankan sebelum deploy)
   Sumbernya link https atau upload dari komputer (PNG, JPEG, GIF, WebP, maks 100 KB).
 - **Kartu** Super Chat, Membership, dan Sticker, masing-masing bisa didesain.
 - **My Designs** (maksimal 20 di browser), undo dan redo, **link Share**, serta Export dan Import file.
+- **Tools ala Canva** di sisi kiri: Templates, Elements, Text, Uploads, Animate, Layers, Designs.
+- **Template bergaya**: Brutal (brutalism), Phantom (merah, hitam, potongan miring), Quest (kotak dialog RPG),
+  Arena (HUD esports), dan Cyber (neon dengan efek), selain template futuristik lainnya.
+- **Animasi per elemen** (preset Fade, Rise, Drop, Pan, Wipe, Pop, Blur dengan durasi dan jeda) dan **efek**
+  berulang atau khusus (Float, Pulse, Shimmer, Glow pulse, Neon flicker, Glitch, Shake, Spin, Drift).
+- **Bubble dari nol**: kerangka Grid (kolom, baris, sel per bagian), kerangka Free (koordinat tiap bagian, bisa
+  digeser langsung di preview dengan mouse atau sentuhan), teks sendiri (dua label per peran, awalan dan akhiran nama
+  dan pesan), bentuk sudut (Round, Slant, Chamfer), dekorasi Halftone dan Stripes, serta bubble khusus untuk member,
+  moderator, dan owner.
+- **Adjust image**: gambar upload bisa diputar, di-flip, di-crop (rasio, zoom, geser), dan difilter. Hasilnya dipanggang
+  ke gambar baru di bawah 100 KB. GIF tidak bisa disunting dengan cara ini karena animasinya hilang.
 
 ## Cara kerja
 
@@ -47,6 +58,11 @@ Semua ada di `lib/design/`:
 - `share.ts`: link Share berupa `#d=` yang berisi desain terkompresi (`deflate-raw`) dan tidak pernah dikirim
   ke server. Ukuran dibatasi untuk menolak bom dekompresi.
 - `store.ts`: banyak desain di `localStorage`, undo dan redo, penggabungan perubahan beruntun (geseran slider).
+- `fx.ts`: CSS untuk animasi per elemen, efek, label, kerangka grid dan bebas, dan bubble per peran. Ditambahkan di akhir
+  stylesheet. Teks buatan user ditulis ke CSS sebagai escape heksadesimal, jadi tanda kutip atau kurung apa pun tidak bisa
+  keluar dari string CSS. Label memakai pseudo-element pada `yt-live-chat-author-chip` (yang `display: contents`),
+  jadi ikut menjadi item flex atau grid milik bubble.
+- `image-edit.ts`: hitungan crop dan ukuran (murni, diuji tanpa browser) dan pemanggangan lewat canvas.
 - CSS keluaran sengaja tanpa `color-mix`, `:has()`, nesting, `@layer`, dan `backdrop-filter`. Browser bawaan OBS
   bisa lebih tua dari Chrome biasa, dan `backdrop-filter` tidak menangkap gameplay karena OBS memadukan sumber
   browser sebagai tekstur terpisah. `tests/design-css.test.ts` menjaga ini.
@@ -69,6 +85,7 @@ BASE_URL=http://localhost:3100/ node e2e/more.js      # My Designs, Share, file,
 BASE_URL=http://localhost:3100/ node e2e/mobile.js    # overflow di 8 lebar layar, mobile, tap sentuh
 BASE_URL=http://localhost:3100/ node e2e/images.js    # gambar, GIF, upload, bingkai avatar, gambar panel
 BASE_URL=http://localhost:3100/ node e2e/security.js  # tanpa permintaan ke host luar sebelum setuju, XSS, CSP, header
+BASE_URL=http://localhost:3100/ node e2e/tools.js     # tools, animasi, efek, label, grid, geser di preview, bubble per peran, editor gambar
 BASE_URL=http://localhost:3100/ node e2e/images.js    # gambar, GIF, upload, bingkai avatar, CSP
 ```
 

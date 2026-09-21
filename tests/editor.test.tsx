@@ -35,9 +35,18 @@ describe("Editor: keadaan awal", () => {
     expect(screen.getByRole("button", { name: "Redo" })).toBeDisabled();
   });
 
-  it("menyediakan empat tab dan template bawaan ditandai aktif", () => {
+  it("menyediakan tools ala Canva dan template bawaan ditandai aktif", () => {
     render(<Editor />);
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Templates", "Layers", "Properties", "Designs"]);
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
+      "Templates",
+      "Elements",
+      "Text",
+      "Uploads",
+      "Animate",
+      "Layers",
+      "Designs",
+      "Properties",
+    ]);
     expect(screen.getByRole("button", { name: "Pakai template Crystal" })).toHaveAttribute("aria-pressed", "true");
   });
 });

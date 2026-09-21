@@ -15,6 +15,10 @@ export const FONT_IDS = [
   "chakra-petch",
   "rajdhani",
   "orbitron",
+  "anton",
+  "archivo-black",
+  "press-start-2p",
+  "bebas-neue",
 ] as const;
 
 export type FontId = (typeof FONT_IDS)[number];
@@ -25,6 +29,8 @@ interface FontDef {
   stack: string;
   /** Nama keluarga font di Google Fonts, dengan spasi. Kosong untuk font sistem. */
   google?: string;
+  /** Bobot yang tersedia, misalnya "400". Bawaan 400;500;600;700. Font satu bobot tidak boleh meminta rentang. */
+  weights?: string;
 }
 
 export const FONTS: Record<FontId, FontDef> = {
@@ -58,11 +64,28 @@ export const FONTS: Record<FontId, FontDef> = {
   },
   rajdhani: { label: "Rajdhani", hint: "Ramping dan teknis", stack: '"Rajdhani", sans-serif', google: "Rajdhani" },
   orbitron: { label: "Orbitron", hint: "Lebar dan sci-fi", stack: '"Orbitron", sans-serif', google: "Orbitron" },
+  anton: { label: "Anton", hint: "Tebal dan padat, cocok untuk poster", stack: '"Anton", "Impact", sans-serif', google: "Anton", weights: "400" },
+  "archivo-black": {
+    label: "Archivo Black",
+    hint: "Sangat tebal, gaya brutalism",
+    stack: '"Archivo Black", "Arial Black", sans-serif',
+    google: "Archivo Black",
+    weights: "400",
+  },
+  "press-start-2p": {
+    label: "Press Start 2P",
+    hint: "Piksel ala game retro",
+    stack: '"Press Start 2P", monospace',
+    google: "Press Start 2P",
+    weights: "400",
+  },
+  "bebas-neue": { label: "Bebas Neue", hint: "Huruf kapital ramping dan tinggi", stack: '"Bebas Neue", "Impact", sans-serif', google: "Bebas Neue", weights: "400" },
 };
 
 export function fontImport(id: FontId): string | null {
   const g = FONTS[id].google;
   if (!g) return null;
   const family = g.replace(/ /g, "+");
-  return `@import url("https://fonts.googleapis.com/css2?family=${family}:wght@400;500;600;700&display=swap");`;
+  const weights = FONTS[id].weights ?? "400;500;600;700";
+  return `@import url("https://fonts.googleapis.com/css2?family=${family}:wght@${weights}&display=swap");`;
 }

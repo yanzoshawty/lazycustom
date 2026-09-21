@@ -49,7 +49,8 @@ type FrameMessage =
   | { type: "clear" }
   | { type: "restart" }
   | { type: "select"; layer: LayerId | null }
-  | { type: "motion"; reduce: boolean };
+  | { type: "motion"; reduce: boolean }
+  | { type: "free"; on: boolean };
 
 /** Kirim pesan ke iframe. Gagal cukup dicatat: preview yang macet ditangani timeout siap di bawah. */
 function postToFrame(frame: HTMLIFrameElement | null, message: FrameMessage): void {
@@ -77,9 +78,12 @@ interface Props {
   onSelect: (layer: LayerId) => void;
   /** Kelas tinggi untuk area preview, diatur oleh layout induk. */
   frameClassName: string;
+  /** Mode geser bagian pesan langsung di preview (layout Free). */
+  freeDrag?: boolean;
+  onMovePart?: (part: string, dx: number, dy: number) => void;
 }
 
-export function Stage({ css, selected, onSelect, frameClassName }: Props) {
+export function Stage({ css, selected, onSelect, frameClassName, freeDrag = false, onMovePart }: Props) {
   const [backdrop, setBackdrop] = useState<Backdrop>("dark");
   const [width, setWidth] = useState<Width>(400);
   const [speed, setSpeed] = useState<SpeedId>("normal");
@@ -106,6 +110,12 @@ export function Stage({ css, selected, onSelect, frameClassName }: Props) {
         readyRef.current = true;
         clearTimeout(timer);
         setStatus("ready");
+      } else if (data?.type === "lc-move") {
+        const m = data as { part?: unknown; dx?: unknown; dy?: unknown };
+        const parts = ["name", "message", "timestamp", "badges"];
+        if (typeof m.part === "string" && parts.includes(m.part) && typeof m.dx === "number" && typeof m.dy === "number" && Number.isFinite(m.dx) && Number.isFinite(m.dy) && Math.abs(m.dx) < 2000 && Math.abs(m.dy) < 2000) {
+          onMovePart?.(m.part, m.dx, m.dy);
+        }
       } else if (data?.type === "lc-select" && typeof data.layer === "string") {
         const layer = data.layer as LayerId;
         if (LAYER_IDS.includes(layer) && layer !== "animation") onSelect(layer);
@@ -123,7 +133,7 @@ export function Stage({ css, selected, onSelect, frameClassName }: Props) {
       clearTimeout(timer);
       window.removeEventListener("message", onMessage);
     };
-  }, [run, onSelect]);
+  }, [run, onSelect, onMovePart]);
 
   useEffect(() => {
     if (status === "ready") postToFrame(frameRef.current, { type: "css", css });
@@ -140,6 +150,10 @@ export function Stage({ css, selected, onSelect, frameClassName }: Props) {
   useEffect(() => {
     if (status === "ready") postToFrame(frameRef.current, { type: "speed", ms: SPEEDS[speed] });
   }, [speed, status]);
+
+  useEffect(() => {
+    if (status === "ready") postToFrame(frameRef.current, { type: "free", on: freeDrag });
+  }, [freeDrag, status]);
 
   useEffect(() => {
     if (status === "ready") postToFrame(frameRef.current, { type: playing ? "play" : "pause" });

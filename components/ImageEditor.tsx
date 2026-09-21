@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowClockwise, ArrowCounterClockwise, FlipHorizontal, FlipVertical, X } from "@phosphor-icons/react";
 import {
   ASPECTS,
@@ -96,7 +97,10 @@ export function ImageEditor({ src, onApply, onClose }: Props) {
 
   const rotate = (delta: 90 | -90) => patch({ rotate: (((p.rotate + delta + 360) % 360) as Rotation) });
 
-  return (
+  // Dirender ke body lewat portal. Di dalam kolom kiri modal terkurung stacking context milik kolom itu, sehingga
+  // area preview yang menempel (z-20) menutupinya dan tombol-tombolnya tidak bisa diklik.
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={dialogRef}
@@ -193,6 +197,7 @@ export function ImageEditor({ src, onApply, onClose }: Props) {
           </div>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

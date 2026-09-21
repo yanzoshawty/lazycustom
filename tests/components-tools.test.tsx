@@ -436,6 +436,21 @@ describe("UploadsPanel", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("editor gambar dirender di body lewat portal, bukan di dalam kolom yang menampungnya", () => {
+    const h = withImages();
+    const { container } = render(
+      <aside data-testid="kolom">
+        <UploadsPanel design={h.design} edit={h.edit} onNotice={() => undefined} />
+      </aside>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Adjust gambar PNG" }));
+    const dialog = screen.getByRole("dialog", { name: "Adjust image" });
+    // Di dalam kolom yang menempel modal terkurung stacking context dan tertutup area preview.
+    expect(container.contains(dialog)).toBe(false);
+    expect(dialog.closest("aside")).toBeNull();
+    expect(document.body.contains(dialog)).toBe(true);
+  });
+
   it("menghapus gambar mengosongkan semua slot yang memakainya", () => {
     const h = withImages();
     render(<UploadsPanel design={h.design} edit={h.edit} onNotice={() => undefined} />);

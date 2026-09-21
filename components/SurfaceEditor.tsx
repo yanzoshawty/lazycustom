@@ -23,7 +23,25 @@ export function SurfaceEditor({ surface, onChange, hideFill = false, fillLabel =
       )}
 
       <Section title="Shape">
-        <SliderField label="Radius" value={surface.radius} min={0} max={32} unit="px" onChange={(radius) => onChange((s) => ({ ...s, radius }), "surface.radius")} />
+        <Segmented
+          label="Corner style"
+          small
+          value={surface.shape}
+          options={[
+            { value: "round", label: "Round" },
+            { value: "slant", label: "Slant" },
+            { value: "chamfer", label: "Chamfer" },
+          ]}
+          onChange={(shape) => onChange((s) => ({ ...s, shape }), "surface.shape")}
+        />
+        {surface.shape === "round" ? (
+          <SliderField label="Radius" value={surface.radius} min={0} max={32} unit="px" onChange={(radius) => onChange((s) => ({ ...s, radius }), "surface.radius")} />
+        ) : (
+          <>
+            <SliderField label="Cut size" value={surface.cut} min={4} max={28} unit="px" onChange={(cut) => onChange((s) => ({ ...s, cut }), "surface.cut")} />
+            <p className="text-xs text-ink-3">Bentuk ini memotong sudut dengan clip-path, jadi Glow dan Hard shadow yang keluar dari kotak ikut terpotong.</p>
+          </>
+        )}
         <SliderField label="Padding" value={surface.padding} min={4} max={24} unit="px" onChange={(padding) => onChange((s) => ({ ...s, padding }), "surface.padding")} />
       </Section>
 

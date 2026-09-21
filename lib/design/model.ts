@@ -576,6 +576,27 @@ export function stripUploadedImages(design: Design): { design: Design; removed: 
   return { design: copy, removed };
 }
 
+/** Semua sumber gambar yang terisi (link maupun unggahan) di seluruh desain, tanpa duplikat, urut kemunculan. */
+export function imageSources(d: Design): string[] {
+  const urls = imageSlots(d)
+    .map((slot) => slot.url)
+    .filter((u): u is string => typeof u === "string" && u !== "");
+  return [...new Set(urls)];
+}
+
+/** Ganti satu sumber gambar di semua slot yang memakainya. Mengembalikan salinan dan jumlah slot yang berubah. */
+export function replaceImageSource(design: Design, from: string, to: string): { design: Design; changed: number } {
+  const copy = JSON.parse(JSON.stringify(design)) as Design;
+  let changed = 0;
+  for (const slot of imageSlots(copy)) {
+    if (slot.url === from) {
+      slot.url = to;
+      changed += 1;
+    }
+  }
+  return { design: copy, changed };
+}
+
 /** Alamat gambar dari luar (link https) yang dipakai desain, tanpa duplikat. Gambar unggahan tidak dihitung. */
 export function remoteImageUrls(d: Design): string[] {
   const urls = imageSlots(d)

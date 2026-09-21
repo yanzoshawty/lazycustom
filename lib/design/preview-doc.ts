@@ -132,6 +132,8 @@ var items=document.getElementById('items');
 var list=document.getElementById('list');
 var styleEl=document.getElementById('lc-style');
 var hlEl=document.getElementById('lc-hl');
+var freeEl=document.getElementById('lc-free');
+var freeOn=false;
 var motionEl=document.getElementById('lc-motion');
 var live=!C.thumb;
 var playing=live;
@@ -240,6 +242,20 @@ function select(layer){
   var sel=layer&&C.targets[layer];
   hlEl.textContent=sel?sel.join(',')+'{outline:2px solid #35B3F5!important;outline-offset:2px!important}':'';
 }
+function setFree(on){
+  freeOn=on;
+  freeEl.textContent=on?'yt-live-chat-text-message-renderer #author-name,yt-live-chat-text-message-renderer #message,yt-live-chat-text-message-renderer #timestamp,yt-live-chat-text-message-renderer #chat-badges{cursor:move!important;touch-action:none!important;outline:1px dashed rgba(53,179,245,.7)!important;outline-offset:2px!important}':'';
+}
+function dragPartOf(t){
+  var el=t&&t.nodeType===1?t:(t&&t.parentElement);
+  if(!el||!el.closest)return null;
+  if(el.closest('yt-live-chat-paid-message-renderer,yt-live-chat-membership-item-renderer,yt-live-chat-paid-sticker-renderer'))return null;
+  var m=el.closest('#message');if(m)return {part:'message',el:m};
+  var n=el.closest('#author-name');if(n)return {part:'name',el:n};
+  var ts=el.closest('#timestamp');if(ts)return {part:'timestamp',el:ts};
+  var b=el.closest('#chat-badges');if(b)return {part:'badges',el:b};
+  return null;
+}
 function ready(){try{window.parent.postMessage({type:'lc-ready'},'*');}catch(e){}}
 
 window.addEventListener('message',function(e){
@@ -257,17 +273,35 @@ window.addEventListener('message',function(e){
     case 'restart':seed();break;
     case 'select':select(typeof d.layer==='string'?d.layer:null);break;
     case 'motion':motionEl.textContent=d.reduce?C.motionCss:'';break;
+    case 'free':setFree(!!d.on);break;
   }
 });
 if(live){
   // Tap dideteksi sendiri dari pointerdown dan pointerup, bukan lewat event click. Di iframe bersandbox
   // browser sentuh tidak selalu membuat click. Geser (scroll halaman) atau tekan lama tidak dihitung tap.
   var down=null;
+  var drag=null;
+  function endDrag(){if(drag){drag.el.style.removeProperty('translate');drag=null;}}
   document.addEventListener('pointerdown',function(e){
     down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId,target:e.target};
+    if(freeOn&&e.button===0){var hit=dragPartOf(e.target);if(hit)drag={part:hit.part,el:hit.el,x:e.clientX,y:e.clientY,id:e.pointerId,moved:false};}
   },true);
-  document.addEventListener('pointercancel',function(){down=null;},true);
+  document.addEventListener('pointermove',function(e){
+    if(!drag||drag.id!==e.pointerId)return;
+    var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(!drag.moved&&dx*dx+dy*dy<16)return;
+    drag.moved=true;
+    drag.el.style.setProperty('translate',dx+'px '+dy+'px','important');
+  },true);
+  document.addEventListener('pointercancel',function(){down=null;endDrag();},true);
   document.addEventListener('pointerup',function(e){
+    if(drag&&drag.id===e.pointerId&&drag.moved){
+      var mv={type:'lc-move',part:drag.part,dx:e.clientX-drag.x,dy:e.clientY-drag.y};
+      down=null;endDrag();
+      try{window.parent.postMessage(mv,'*');}catch(x){}
+      return;
+    }
+    endDrag();
     var d=down;down=null;
     if(!d||d.id!==e.pointerId||e.button>0)return;
     var dx=e.clientX-d.x,dy=e.clientY-d.y;
@@ -277,7 +311,7 @@ if(live){
 }else{
   motionEl.textContent=C.motionCss;
 }
-window.__lc={add:add,count:function(){return items.children.length;},layerOf:layerOf,select:select,play:play,pause:pause,isPlaying:function(){return playing;},seed:seed};
+window.__lc={setFree:setFree,add:add,count:function(){return items.children.length;},layerOf:layerOf,select:select,play:play,pause:pause,isPlaying:function(){return playing;},seed:seed};
 seed();
 ready();
 })();
@@ -317,6 +351,7 @@ export function buildPreviewDoc(css: string, mode: PreviewMode = "live"): string
     `<style id="lc-style">${safeCss}</style>` +
     `<style id="lc-hover">${mode === "live" ? hoverCss() : ""}</style>` +
     `<style id="lc-hl"></style>` +
+    `<style id="lc-free"></style>` +
     `<style id="lc-motion"></style>` +
     `</head><body>` +
     `<yt-live-chat-app><yt-live-chat-renderer>${chrome}` +

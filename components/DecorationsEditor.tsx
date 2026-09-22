@@ -1,8 +1,10 @@
 "use client";
 
 import { Plus, Trash } from "@phosphor-icons/react";
+import type { ImageScope } from "@/lib/design/image-target";
 import type { Decoration, DecorationKind } from "@/lib/design/model";
 import { AnchorPicker, ColorField, Segmented, SliderField } from "./controls";
+import { CanvasEditButton } from "./CanvasEditButton";
 import { ImageSourceField } from "./ImageSourceField";
 
 export const DECORATION_LABEL: Record<DecorationKind, string> = {
@@ -53,7 +55,7 @@ export function newDecoration(kind: DecorationKind): Decoration {
 /** Gradient border dan gambar hanya satu per permukaan, karena masing-masing memakai satu pseudo-element. */
 const SINGLE: DecorationKind[] = ["gradient-border", "image"];
 
-function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) => void }) {
+function Fields({ d, onChange, scope }: { d: Decoration; onChange: (next: Decoration) => void; scope: ImageScope }) {
   switch (d.kind) {
     case "glow":
       return (
@@ -132,11 +134,12 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
       return (
         <>
           <ImageSourceField value={d.url} onChange={(url) => onChange({ ...d, url })} />
+          <CanvasEditButton imgRef={{ kind: "pin", scope, id: d.id }} disabled={d.url === ""} />
           <AnchorPicker label="Position" value={d.anchor} onChange={(anchor) => onChange({ ...d, anchor })} />
-          <SliderField label="Lebar" value={d.width} min={8} max={240} unit="px" onChange={(width) => onChange({ ...d, width })} />
-          <SliderField label="Offset X" value={d.offsetX} min={-40} max={80} unit="px" onChange={(offsetX) => onChange({ ...d, offsetX })} />
-          <SliderField label="Offset Y" value={d.offsetY} min={-40} max={80} unit="px" onChange={(offsetY) => onChange({ ...d, offsetY })} />
-          <p className="text-xs text-ink-3">Tinggi mengikuti proporsi gambar. Bisa lebih dari satu gambar per permukaan.</p>
+          <SliderField label="Lebar" value={d.width} min={8} max={400} unit="px" onChange={(width) => onChange({ ...d, width })} />
+          <SliderField label="Offset X" value={d.offsetX} min={-100} max={400} unit="px" onChange={(offsetX) => onChange({ ...d, offsetX })} />
+          <SliderField label="Offset Y" value={d.offsetY} min={-100} max={400} unit="px" onChange={(offsetY) => onChange({ ...d, offsetY })} />
+          <p className="text-xs text-ink-3">Tinggi mengikuti proporsi gambar. Bisa lebih dari satu gambar per permukaan. Gambar tidak bisa keluar dari bubble.</p>
         </>
       );
     case "image":
@@ -175,10 +178,18 @@ function Fields({ d, onChange }: { d: Decoration; onChange: (next: Decoration) =
 
 interface Props {
   decorations: Decoration[];
-  onChange: (next: Decoration[], key: string) => void;
+  /**
+   * Menerima fungsi pembaharu, bukan array jadi: array baru dihitung dari state TERKINI saat perubahan
+   * benar-benar diterapkan, bukan dari `decorations` yang ditutup (closure) saat tombol digambar. Ini
+   * penting karena mengunggah gambar tidak instan; dua unggahan yang hampir bersamaan (dua image pin
+   * sekaligus) bisa saling menimpa kalau array dihitung lebih awal dari nilai yang sudah basi.
+   */
+  onChange: (updater: (prev: Decoration[]) => Decoration[], key: string) => void;
+  /** Permukaan pemilik dekorasi ini, dipakai untuk mengatur image pin langsung di canvas. */
+  scope?: ImageScope;
 }
 
-export function DecorationsEditor({ decorations, onChange }: Props) {
+export function DecorationsEditor({ decorations, onChange, scope = "default" }: Props) {
   const full = decorations.length >= MAX_DECORATIONS;
   const kinds = Object.keys(DECORATION_LABEL) as DecorationKind[];
 
@@ -194,7 +205,7 @@ export function DecorationsEditor({ decorations, onChange }: Props) {
                 key={kind}
                 type="button"
                 disabled={full || taken}
-                onClick={() => onChange([...decorations, newDecoration(kind)], `deco.add.${kind}`)}
+                onClick={() => onChange((prev) => [...prev, newDecoration(kind)], `deco.add.${kind}`)}
                 title={taken ? `${DECORATION_LABEL[kind]} hanya bisa satu per permukaan` : undefined}
                 className="inline-flex h-9 items-center gap-1.5 rounded-field border border-line-strong bg-surface px-3 text-xs font-semibold text-ink transition hover:border-accent hover:text-accent active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line-strong disabled:hover:text-ink"
               >
@@ -222,7 +233,7 @@ export function DecorationsEditor({ decorations, onChange }: Props) {
                 </p>
                 <button
                   type="button"
-                  onClick={() => onChange(decorations.filter((x) => x.id !== d.id), `deco.remove.${d.id}`)}
+                  onClick={() => onChange((prev) => prev.filter((x) => x.id !== d.id), `deco.remove.${d.id}`)}
                   aria-label={`Hapus ${DECORATION_LABEL[d.kind]} #${index + 1}`}
                   className="inline-flex size-9 items-center justify-center rounded-field text-ink-2 transition hover:bg-danger-soft hover:text-danger active:scale-95"
                 >
@@ -230,8 +241,9 @@ export function DecorationsEditor({ decorations, onChange }: Props) {
                 </button>
               </div>
               <Fields
+                scope={scope}
                 d={d}
-                onChange={(next) => onChange(decorations.map((x) => (x.id === d.id ? next : x)), `deco.${d.id}`)}
+                onChange={(next) => onChange((prev) => prev.map((x) => (x.id === d.id ? next : x)), `deco.${d.id}`)}
               />
             </li>
           ))}

@@ -95,6 +95,7 @@ function CardEditor({ kind, design, edit }: { kind: CardKey; design: Design; edi
       )}
 
       <SurfaceEditor
+        scope={kind === "superChat" ? "superchat" : kind === "membership" ? "membership" : "sticker"}
         surface={card.surface}
         onChange={patchSurface}
         hideFill={tier && kind === "superChat"}
@@ -187,7 +188,7 @@ function LayerFields({ design: d, layer, edit, dragMode, onDragMode }: Required<
             <SliderField label="Opacity" value={d.panel.opacity} min={0} max={100} unit="%" hint="0% berarti transparan penuh, cocok untuk ditumpuk di atas gameplay." onChange={(opacity) => edit((x) => ({ ...x, panel: { ...x.panel, opacity } }), "panel.opacity")} />
           </Section>
           <Section title="Panel images">
-            <PanelImagesEditor images={d.panelImages} onChange={(panelImages, key) => edit((x) => ({ ...x, panelImages }), key)} />
+            <PanelImagesEditor images={d.panelImages} onChange={(updater, key) => edit((x) => ({ ...x, panelImages: updater(x.panelImages) }), key)} />
           </Section>
           <Section title="Elemen bawaan YouTube">
             <ToggleField label="Sembunyikan header dan kolom kirim" hint="Biasanya tidak perlu tampil di OBS." checked={d.hideChrome} onChange={(hideChrome) => edit((x) => ({ ...x, hideChrome }))} />

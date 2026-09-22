@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowsClockwise, Pause, Play, Trash } from "@phosphor-icons/react";
+import { ArrowsClockwise, Crosshair, Pause, Play, Trash } from "@phosphor-icons/react";
+import type { ImageGeometry, ImagePatch } from "@/lib/design/image-target";
 import { LAYER_IDS } from "@/lib/design/layers";
 import type { LayerId } from "@/lib/design/model";
 import { buildPreviewDoc, SEND_KINDS, SPEEDS, type SendKind, type SpeedId } from "@/lib/design/preview-doc";
@@ -50,7 +51,9 @@ type FrameMessage =
   | { type: "restart" }
   | { type: "select"; layer: LayerId | null }
   | { type: "motion"; reduce: boolean }
-  | { type: "free"; on: boolean };
+  | { type: "free"; on: boolean }
+  | { type: "focus"; kind: SendKind | null }
+  | { type: "imgsel"; target: ImageGeometry | null; ref: number };
 
 /** Kirim pesan ke iframe. Gagal cukup dicatat: preview yang macet ditangani timeout siap di bawah. */
 function postToFrame(frame: HTMLIFrameElement | null, message: FrameMessage): void {
@@ -72,10 +75,42 @@ const getReduced = () => window.matchMedia(reducedQuery).matches;
 const toolButton =
   "inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-field border border-line-strong bg-surface px-3 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent active:scale-95";
 
+const ROLE_KINDS = ["viewer", "member", "moderator", "owner", "superchat", "membership", "sticker"];
+const ANCHOR_SET = new Set(["top-left", "top-center", "top-right", "middle-left", "center", "middle-right", "bottom-left", "bottom-center", "bottom-right"]);
+
+/** Patch dari iframe diperiksa lagi di sini. Hanya angka hingga dan anchor yang dikenal yang lolos. */
+function cleanPatch(raw: unknown): ImagePatch | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const out: ImagePatch = {};
+  for (const k of ["width", "height", "offsetX", "offsetY"] as const) {
+    if (r[k] === undefined) continue;
+    if (typeof r[k] !== "number" || !Number.isFinite(r[k]) || Math.abs(r[k] as number) > 5000) return null;
+    out[k] = r[k] as number;
+  }
+  if (r.anchor !== undefined) {
+    if (typeof r.anchor !== "string" || !ANCHOR_SET.has(r.anchor)) return null;
+    out.anchor = r.anchor as ImagePatch["anchor"];
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 interface Props {
   css: string;
   selected: LayerId | null;
-  onSelect: (layer: LayerId) => void;
+  /** role: peran pesan yang diklik di preview (viewer, member, ...), bila ada. */
+  onSelect: (layer: LayerId, role?: string | null) => void;
+  /** Lebar acuan skala otomatis, atau 0 bila skala mati. Dipakai gizmo gambar untuk menghitung ukuran. */
+  scaleRef?: number;
+  /** Hanya tampilkan satu jenis pesan di preview. Null berarti semua. */
+  focusKind?: SendKind | null;
+  focusOn?: boolean;
+  onFocusToggle?: () => void;
+  focusLabel?: string;
+  /** Gambar yang sedang diatur di canvas. Simulasi chat dijeda selama itu. */
+  imageTarget?: ImageGeometry | null;
+  onImageSet?: (ref: { kind: "pin" | "panel"; scope: string; id: string }, patch: ImagePatch) => void;
+  onImageDone?: () => void;
   /** Kelas tinggi untuk area preview, diatur oleh layout induk. */
   frameClassName: string;
   /** Mode geser bagian pesan langsung di preview (layout Free). */
@@ -83,7 +118,22 @@ interface Props {
   onMovePart?: (part: string, dx: number, dy: number) => void;
 }
 
-export function Stage({ css, selected, onSelect, frameClassName, freeDrag = false, onMovePart }: Props) {
+export function Stage({
+  css,
+  selected,
+  onSelect,
+  frameClassName,
+  freeDrag = false,
+  onMovePart,
+  scaleRef = 0,
+  focusKind = null,
+  focusOn = false,
+  onFocusToggle,
+  focusLabel = "Fokus bubble",
+  imageTarget = null,
+  onImageSet,
+  onImageDone,
+}: Props) {
   const [backdrop, setBackdrop] = useState<Backdrop>("dark");
   const [width, setWidth] = useState<Width>(400);
   const [speed, setSpeed] = useState<SpeedId>("normal");
@@ -105,7 +155,7 @@ export function Stage({ css, selected, onSelect, frameClassName, freeDrag = fals
     readyRef.current = false;
     function onMessage(e: MessageEvent) {
       if (e.source !== frameRef.current?.contentWindow) return;
-      const data = e.data as { type?: string; layer?: unknown } | null;
+      const data = e.data as { type?: string; layer?: unknown; role?: unknown } | null;
       if (data?.type === "lc-ready") {
         readyRef.current = true;
         clearTimeout(timer);
@@ -118,7 +168,14 @@ export function Stage({ css, selected, onSelect, frameClassName, freeDrag = fals
         }
       } else if (data?.type === "lc-select" && typeof data.layer === "string") {
         const layer = data.layer as LayerId;
-        if (LAYER_IDS.includes(layer) && layer !== "animation") onSelect(layer);
+        const role = typeof data.role === "string" && ROLE_KINDS.includes(data.role) ? data.role : null;
+        if (LAYER_IDS.includes(layer) && layer !== "animation") onSelect(layer, role);
+      } else if (data?.type === "lc-image-set") {
+        const m = data as { kind?: unknown; scope?: unknown; id?: unknown; patch?: unknown };
+        const patch = cleanPatch(m.patch);
+        if ((m.kind === "pin" || m.kind === "panel") && typeof m.scope === "string" && typeof m.id === "string" && patch) onImageSet?.({ kind: m.kind, scope: m.scope, id: m.id }, patch);
+      } else if (data?.type === "lc-image-done") {
+        onImageDone?.();
       }
     }
     const timer = setTimeout(() => {
@@ -133,7 +190,7 @@ export function Stage({ css, selected, onSelect, frameClassName, freeDrag = fals
       clearTimeout(timer);
       window.removeEventListener("message", onMessage);
     };
-  }, [run, onSelect, onMovePart]);
+  }, [run, onSelect, onMovePart, onImageSet, onImageDone]);
 
   useEffect(() => {
     if (status === "ready") postToFrame(frameRef.current, { type: "css", css });
@@ -156,8 +213,18 @@ export function Stage({ css, selected, onSelect, frameClassName, freeDrag = fals
   }, [freeDrag, status]);
 
   useEffect(() => {
-    if (status === "ready") postToFrame(frameRef.current, { type: playing ? "play" : "pause" });
-  }, [playing, status]);
+    if (status === "ready") postToFrame(frameRef.current, { type: "focus", kind: focusKind });
+  }, [focusKind, status]);
+
+  useEffect(() => {
+    if (status === "ready") postToFrame(frameRef.current, { type: "imgsel", target: imageTarget, ref: scaleRef });
+  }, [imageTarget, scaleRef, status]);
+
+  // Selama gambar diatur di canvas, pesan baru berhenti masuk supaya gambarnya tidak bergeser dari bawah kursor.
+  const running = playing && imageTarget === null;
+  useEffect(() => {
+    if (status === "ready") postToFrame(frameRef.current, { type: running ? "play" : "pause" });
+  }, [running, status]);
 
   function retry() {
     setStatus("loading");
@@ -210,6 +277,18 @@ export function Stage({ css, selected, onSelect, frameClassName, freeDrag = fals
           <Trash size={16} weight="bold" aria-hidden="true" />
           <span className="max-sm:sr-only">Clear</span>
         </button>
+        {onFocusToggle ? (
+          <button
+            type="button"
+            onClick={onFocusToggle}
+            aria-pressed={focusOn}
+            title="Tampilkan hanya jenis pesan yang sedang kamu edit, supaya gampang dilihat"
+            className={`${toolButton} px-2.5 aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent`}
+          >
+            <Crosshair size={16} weight="bold" aria-hidden="true" />
+            <span className="max-sm:sr-only">{focusLabel}</span>
+          </button>
+        ) : null}
         <label className="ml-auto inline-flex items-center gap-2 text-xs font-medium text-ink-2 max-sm:hidden">
           <span className="max-[420px]:sr-only">Backdrop</span>
           <select
@@ -269,6 +348,15 @@ export function Stage({ css, selected, onSelect, frameClassName, freeDrag = fals
           </select>
         </label>
       </div>
+
+      {imageTarget ? (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-field border border-accent bg-accent-soft px-3 py-2 text-sm text-ink">
+          <span>Mengatur gambar di canvas. Geser untuk memindah, tarik titik di sudutnya untuk mengubah ukuran.</span>
+          <button type="button" onClick={onImageDone} className="h-9 rounded-field bg-accent px-4 text-sm font-semibold text-on-accent transition active:scale-95">
+            Selesai
+          </button>
+        </div>
+      ) : null}
 
       <div
         className={`hud-frame relative overflow-hidden rounded-panel border border-line ${frameClassName} ${bg.className ?? ""}`}

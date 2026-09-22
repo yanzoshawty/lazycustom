@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AnchorPicker } from "@/components/controls";
 import { ImageBudgetContext, ImageSourceField } from "@/components/ImageSourceField";
 import { Inspector, type Edit } from "@/components/Inspector";
@@ -9,9 +9,20 @@ import { countUploadedImages, MAX_DESIGN_DATA_CHARS, type Design, type PanelImag
 import { designFromTemplate } from "@/lib/design/templates";
 import { toDataUri } from "@/lib/design/upload";
 
+/** jsdom tidak punya createImageBitmap dan encode canvas, jadi hasil pemampatan disediakan uji. Validasi byte tetap nyata. */
+const compress = vi.hoisted(() => ({ fake: null as null | ((f: File) => Promise<unknown>) }));
+vi.mock("@/lib/design/image-compress", async (orig) => {
+  const actual = await orig<typeof import("@/lib/design/image-compress")>();
+  return { ...actual, compressImageFile: (f: File) => (compress.fake ? compress.fake(f) : actual.compressImageFile(f)) };
+});
+
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 const PNG_URI = toDataUri("image/png", PNG_BYTES);
 const file = (bytes: Uint8Array | string, name: string, type = "image/png") => new File([bytes as BlobPart], name, { type });
+const compressed = () => ({ ok: true, dataUri: PNG_URI, bytes: 12, mime: "image/png", width: 1, height: 1, sourceBytes: 5000 });
+beforeEach(() => {
+  compress.fake = null;
+});
 const pickFile = (label: RegExp | string, f: File) => fireEvent.change(screen.getByLabelText(label, { selector: "input[type=file]" }), { target: { files: [f] } });
 
 describe("ImageSourceField", () => {
@@ -37,7 +48,8 @@ describe("ImageSourceField", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("upload PNG yang sah menjadi data URI", async () => {
+  it("upload PNG yang sah dimampatkan, masuk pustaka, lalu menjadi data URI", async () => {
+    compress.fake = async () => compressed();
     const onChange = vi.fn();
     render(<ImageSourceField value="" onChange={onChange} />);
     pickFile(/Pilih file/, file(PNG_BYTES, "logo.png"));
@@ -53,17 +65,27 @@ describe("ImageSourceField", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("file di atas 100 KB ditolak dengan pesan ukuran", async () => {
+  it("file sumber di atas 8 MB ditolak dengan pesan ukuran", async () => {
     const onChange = vi.fn();
     render(<ImageSourceField value="" onChange={onChange} />);
-    const big = new Uint8Array(100 * 1024 + 10);
-    big.set(PNG_BYTES);
-    pickFile(/Pilih file/, file(big, "besar.png"));
-    expect(await screen.findByRole("alert")).toHaveTextContent(/melebihi 100 KB/);
+    const big = file(PNG_BYTES, "besar.png");
+    Object.defineProperty(big, "size", { value: 9 * 1024 * 1024 });
+    pickFile(/Pilih file/, big);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/lebih dari 8 MB/);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("gambar yang gagal dimampatkan menampilkan alasannya", async () => {
+    compress.fake = async () => ({ ok: false, reason: "CANNOT_FIT" });
+    const onChange = vi.fn();
+    render(<ImageSourceField value="" onChange={onChange} />);
+    pickFile(/Pilih file/, file(PNG_BYTES, "rumit.png"));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/di bawah 100 KB/);
     expect(onChange).not.toHaveBeenCalled();
   });
 
   it("menolak upload bila total data unggahan desain sudah penuh", async () => {
+    compress.fake = async () => compressed();
     const onChange = vi.fn();
     render(
       <ImageBudgetContext.Provider value={MAX_DESIGN_DATA_CHARS}>
@@ -76,6 +98,7 @@ describe("ImageSourceField", () => {
   });
 
   it("mengganti gambar unggahan tidak menghitung gambar lama dua kali", async () => {
+    compress.fake = async () => compressed();
     const onChange = vi.fn();
     render(
       <ImageBudgetContext.Provider value={PNG_URI.length}>
@@ -117,14 +140,17 @@ describe("AnchorPicker", () => {
 
 describe("PanelImagesEditor", () => {
   const img = (o: Partial<PanelImage> = {}): PanelImage => ({ ...newPanelImage("front"), ...o });
+  /** onChange sekarang menerima fungsi pembaharu; tes membaca hasilnya dengan menerapkannya ke array sebelum-nya. */
+  const appliedImgs = (onChange: ReturnType<typeof vi.fn>, before: PanelImage[], call = 0): PanelImage[] =>
+    (onChange.mock.calls[call][0] as (prev: PanelImage[]) => PanelImage[])(before);
 
   it("menambah gambar di belakang dan di depan pesan", () => {
     const onChange = vi.fn();
     render(<PanelImagesEditor images={[]} onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: "Gambar di belakang pesan" }));
     fireEvent.click(screen.getByRole("button", { name: "Gambar di depan pesan" }));
-    expect((onChange.mock.calls[0][0] as PanelImage[])[0].layer).toBe("behind");
-    expect((onChange.mock.calls[1][0] as PanelImage[])[0].layer).toBe("front");
+    expect(appliedImgs(onChange, [], 0)[0].layer).toBe("behind");
+    expect(appliedImgs(onChange, [], 1)[0].layer).toBe("front");
   });
 
   it("dua gambar per lapisan adalah batasnya", () => {
@@ -148,9 +174,9 @@ describe("PanelImagesEditor", () => {
     const b = img({ id: "a-2", layer: "behind" });
     render(<PanelImagesEditor images={[a, b]} onChange={onChange} />);
     fireEvent.click(screen.getAllByRole("radio", { name: "Kiri bawah" })[0]);
-    expect((onChange.mock.calls[0][0] as PanelImage[])[0].anchor).toBe("bottom-left");
+    expect(appliedImgs(onChange, [a, b], 0)[0].anchor).toBe("bottom-left");
     fireEvent.click(screen.getByRole("button", { name: "Hapus gambar panel #1" }));
-    expect((onChange.mock.calls[1][0] as PanelImage[]).map((i) => i.id)).toEqual(["a-2"]);
+    expect(appliedImgs(onChange, [a, b], 1).map((i) => i.id)).toEqual(["a-2"]);
   });
 
   it("gambar baru punya nilai bawaan yang lolos skema", () => {

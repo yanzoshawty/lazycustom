@@ -159,9 +159,9 @@ export const decorationSchema = z.discriminatedUnion("kind", [
     kind: z.literal("image-pin"),
     url: imageSource,
     anchor: z.enum(ANCHORS),
-    width: z.number().int().min(8).max(240),
-    offsetX: z.number().int().min(-40).max(80),
-    offsetY: z.number().int().min(-40).max(80),
+    width: z.number().int().min(8).max(400),
+    offsetX: z.number().int().min(-100).max(800),
+    offsetY: z.number().int().min(-100).max(800),
   }),
 ]);
 export type Decoration = z.infer<typeof decorationSchema>;
@@ -218,8 +218,8 @@ export const panelImageSchema = z.object({
   anchor: z.enum(ANCHORS),
   width: z.number().int().min(16).max(600),
   height: z.number().int().min(16).max(600),
-  offsetX: z.number().int().min(-300).max(300),
-  offsetY: z.number().int().min(-300).max(300),
+  offsetX: z.number().int().min(-1000).max(1000),
+  offsetY: z.number().int().min(-1000).max(1000),
   opacity: z.number().int().min(5).max(100),
   fit: z.enum(["contain", "cover"]),
 });

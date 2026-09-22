@@ -3,8 +3,9 @@
 import { createContext, useContext, useRef, useState } from "react";
 import { ImageSquare, Trash, UploadSimple } from "@phosphor-icons/react";
 import { isSafeImageUrl, MAX_DESIGN_DATA_CHARS } from "@/lib/design/model";
-import { readImageFile, UPLOAD_MESSAGE } from "@/lib/design/upload";
 import { TextField } from "./controls";
+import { LibraryGrid } from "./LibraryGrid";
+import { useImageLibrary, useImportImage } from "./useImageLibrary";
 
 /** Jumlah karakter data unggahan yang sudah dipakai desain aktif. Diisi oleh Inspector. */
 export const ImageBudgetContext = createContext(0);
@@ -29,6 +30,8 @@ export function ImageSourceField({ label = "Link gambar atau GIF", value, onChan
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const uploaded = value.startsWith("data:");
+  const library = useImageLibrary();
+  const importImage = useImportImage();
 
   function typed(text: string) {
     setDraft(text);
@@ -51,19 +54,24 @@ export function ImageSourceField({ label = "Link gambar atau GIF", value, onChan
     if (!file) return;
     setUploadError(null);
     setBusy(true);
-    const result = await readImageFile(file);
+    const result = await importImage(file);
     setBusy(false);
     if (!result.ok) {
-      setUploadError(UPLOAD_MESSAGE[result.reason]);
+      setUploadError(result.message);
       return;
     }
+    applyLibraryImage(result.item.dataUri);
+  }
+
+  function applyLibraryImage(dataUri: string) {
     const others = used - (uploaded ? value.length : 0);
-    if (others + result.dataUri.length > MAX_DESIGN_DATA_CHARS) {
+    if (others + dataUri.length > MAX_DESIGN_DATA_CHARS) {
       setUploadError(`Total gambar unggahan di desain ini sudah penuh (maks sekitar ${kb(MAX_DESIGN_DATA_CHARS)} KB). Hapus satu gambar unggahan atau pakai link https.`);
       return;
     }
+    setUploadError(null);
     setLinkError(null);
-    onChange(result.dataUri);
+    onChange(dataUri);
   }
 
   return (
@@ -106,8 +114,14 @@ export function ImageSourceField({ label = "Link gambar atau GIF", value, onChan
           <UploadSimple size={16} weight="bold" aria-hidden="true" />
           {busy ? "Membaca..." : uploaded ? "Ganti dengan file lain" : "Upload dari komputer"}
         </button>
-        <span className="text-xs text-ink-3">PNG, JPEG, GIF, WebP. Maks 100 KB. Tidak ikut link Share.</span>
+        <span className="text-xs text-ink-3">PNG, JPEG, GIF, WebP. Dimampatkan otomatis, disimpan di komputer ini. Tidak ikut link Share.</span>
       </div>
+      {library.items.length > 0 ? (
+        <div className="grid gap-1.5">
+          <p className="text-xs font-semibold text-ink-2">Dari pustaka</p>
+          <LibraryGrid items={library.items} limit={8} onPick={(it) => applyLibraryImage(it.dataUri)} />
+        </div>
+      ) : null}
       <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={pick} className="sr-only" tabIndex={-1} aria-label={`Pilih file untuk ${label}`} />
       {uploadError ? (
         <p role="alert" className="text-xs text-danger">

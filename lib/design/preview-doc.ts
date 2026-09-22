@@ -1,3 +1,4 @@
+import { GEOMETRY_JS, GIZMO_CSS, GIZMO_JS } from "./gizmo-script";
 import { LAYERS } from "./layers";
 
 /**
@@ -213,7 +214,7 @@ function add(kind){
 function schedule(){
   clearTimeout(timer);
   if(!playing||!live)return;
-  timer=setTimeout(function(){add(SEQ[cycle++%SEQ.length]);schedule();},gap*(0.75+Math.random()*0.5));
+  timer=setTimeout(function(){add(focusKind||SEQ[cycle++%SEQ.length]);schedule();},gap*(0.75+Math.random()*0.5));
 }
 function play(){playing=true;schedule();}
 function pause(){playing=false;clearTimeout(timer);}
@@ -260,6 +261,7 @@ function dragPartOf(t){
   var b=el.closest('#chat-badges');if(b)return {part:'badges',el:b};
   return null;
 }
+${GEOMETRY_JS}${GIZMO_JS}
 function ready(){try{window.parent.postMessage({type:'lc-ready'},'*');}catch(e){}}
 
 window.addEventListener('message',function(e){
@@ -278,6 +280,8 @@ window.addEventListener('message',function(e){
     case 'select':select(typeof d.layer==='string'?d.layer:null);break;
     case 'motion':motionEl.textContent=d.reduce?C.motionCss:'';break;
     case 'free':setFree(!!d.on);break;
+    case 'focus':setFocus(typeof d.kind==='string'?d.kind:null);break;
+    case 'imgsel':imgsel(d.target,d.ref);break;
   }
 });
 if(live){
@@ -286,7 +290,9 @@ if(live){
   var down=null;
   var drag=null;
   function endDrag(){if(drag){drag.el.style.removeProperty('translate');drag=null;}}
+  function onGizmo(e){return e.target&&e.target.closest&&e.target.closest('#lc-gz');}
   document.addEventListener('pointerdown',function(e){
+    if(onGizmo(e))return;
     down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId,target:e.target};
     if(freeOn&&e.button===0){var hit=dragPartOf(e.target);if(hit)drag={part:hit.part,el:hit.el,x:e.clientX,y:e.clientY,id:e.pointerId,moved:false};}
   },true);
@@ -299,6 +305,7 @@ if(live){
   },true);
   document.addEventListener('pointercancel',function(){down=null;endDrag();},true);
   document.addEventListener('pointerup',function(e){
+    if(onGizmo(e))return;
     if(drag&&drag.id===e.pointerId&&drag.moved){
       var mv={type:'lc-move',part:drag.part,dx:e.clientX-drag.x,dy:e.clientY-drag.y};
       down=null;endDrag();
@@ -310,12 +317,12 @@ if(live){
     if(!d||d.id!==e.pointerId||e.button>0)return;
     var dx=e.clientX-d.x,dy=e.clientY-d.y;
     if(dx*dx+dy*dy>100||Date.now()-d.t>700)return;
-    try{window.parent.postMessage({type:'lc-select',layer:layerOf(d.target)},'*');}catch(x){}
+    try{window.parent.postMessage({type:'lc-select',layer:layerOf(d.target),role:roleOf(d.target)},'*');}catch(x){}
   },true);
 }else{
   motionEl.textContent=C.motionCss;
 }
-window.__lc={setFree:setFree,add:add,count:function(){return items.children.length;},layerOf:layerOf,select:select,play:play,pause:pause,isPlaying:function(){return playing;},seed:seed};
+window.__lc={setFocus:setFocus,imgsel:imgsel,geom:G,setFree:setFree,add:add,count:function(){return items.children.length;},layerOf:layerOf,select:select,play:play,pause:pause,isPlaying:function(){return playing;},seed:seed};
 seed();
 ready();
 })();
@@ -356,6 +363,8 @@ export function buildPreviewDoc(css: string, mode: PreviewMode = "live"): string
     `<style id="lc-hover">${mode === "live" ? hoverCss() : ""}</style>` +
     `<style id="lc-hl"></style>` +
     `<style id="lc-free"></style>` +
+    `<style id="lc-focus"></style>` +
+    (mode === "live" ? `<style id="lc-gzcss">${GIZMO_CSS}</style>` : "") +
     `<style id="lc-motion"></style>` +
     `</head><body>` +
     `<yt-live-chat-app><yt-live-chat-renderer>${chrome}` +

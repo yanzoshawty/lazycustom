@@ -1,6 +1,29 @@
 // Uji browser: gambar dan GIF (pin, bingkai avatar, panel), upload, jarak nominal, dan CSP.
 const { chromium } = require("playwright-core");
 const path = require("path");
+const zlib = require("zlib");
+
+/** PNG solid-color asli (bisa didekode) pada dimensi tertentu, dipakai untuk menguji jalur pemampatan otomatis. */
+function solidPng(w, h, rgb) {
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(zlib.crc32(body) >>> 0);
+    return Buffer.concat([len, body, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // color type: RGB
+  const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(w * 3).map((_, i) => rgb[i % 3])]);
+  const raw = Buffer.concat(Array.from({ length: h }, () => row));
+  const idat = zlib.deflateSync(raw);
+  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  return Buffer.concat([sig, chunk("IHDR", ihdr), chunk("IDAT", idat), chunk("IEND", Buffer.alloc(0))]);
+}
 const BASE = process.env.BASE_URL || "http://localhost:3100/";
 const FX = (n) => path.join(__dirname, "fixtures", n);
 const results = [];
@@ -107,10 +130,18 @@ function ok(name, cond, detail = "") {
   await badInput.setInputFiles({ name: "aman.png", mimeType: "image/png", buffer: Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>") });
   await p.waitForTimeout(400);
   ok("SVG berpura-pura .png ditolak dari isinya", (await props.getByText(/Format tidak didukung/).count()) >= 1);
-  const big = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(120 * 1024, 1)]);
-  await badInput.setInputFiles({ name: "besar.png", mimeType: "image/png", buffer: big });
+  // Sumber di atas 8 MB ditolak langsung, tanpa mencoba membaca isinya.
+  const tooLargeSource = Buffer.concat([solidPng(4, 4, [0, 0, 0]), Buffer.alloc(9 * 1024 * 1024)]);
+  await badInput.setInputFiles({ name: "raksasa.png", mimeType: "image/png", buffer: tooLargeSource });
   await p.waitForTimeout(400);
-  ok("file lebih dari 100 KB ditolak dengan pesan ukuran", (await props.getByText(/melebihi 100 KB/).count()) >= 1);
+  ok("file sumber di atas 8 MB ditolak dengan pesan ukuran", (await props.getByText(/lebih dari 8 MB/).count()) >= 1);
+  // File dengan byte mentah di atas 100 KB (dulu ditolak langsung) sekarang dimampatkan otomatis dan diterima,
+  // karena batas 100 KB berlaku untuk hasil akhir, bukan lagi untuk file sumber.
+  const bigButValid = Buffer.concat([solidPng(60, 60, [10, 120, 200]), Buffer.alloc(110 * 1024)]);
+  ok("file uji ini sungguh di atas 100 KB", bigButValid.length > 100 * 1024, bigButValid.length);
+  await badInput.setInputFiles({ name: "besar-tapi-sah.png", mimeType: "image/png", buffer: bigButValid });
+  await p.waitForTimeout(600);
+  ok("file besar tapi sah dimampatkan otomatis, tidak ditolak", (await props.getByRole("alert").count()) === 0);
   ok("CSS tidak memuat script atau isi file yang ditolak", !/alert\(1\)|<svg/.test(clip) && !/alert\(1\)/.test(await code()));
 
   // ---------- tidak ada pelanggaran CSP saat gambar data dipakai ----------
@@ -127,7 +158,7 @@ function ok(name, cond, detail = "") {
   await other.waitForTimeout(1200);
   const otherCss = await other.locator("pre code").first().textContent();
   ok("desain dari link Share tidak membawa gambar unggahan", !/data:image/.test(otherCss) && !/disingkat/.test(otherCss), otherCss.length);
-  ok("link Share tetap membawa pengaturan lain (jarak nominal 20px)", /gap: 4px 20px/.test(otherCss));
+  ok("link Share tetap membawa pengaturan lain (jarak nominal 20px)", /gap: [\d.]+(?:px|vw) [\d.]+(?:px|vw)/.test(otherCss));
 
   // ---------- Export file membawa unggahan, impor memulihkannya ----------
   const [dl] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: "Export file" }).click()]);

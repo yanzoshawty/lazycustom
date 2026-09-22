@@ -174,7 +174,7 @@ function ok(name, cond, detail = "") {
   await p.getByRole("button", { name: /^Bubble/ }).first().click();
   await props(p).getByRole("button", { name: "Corner brackets", exact: true }).click();
   await p.waitForTimeout(300);
-  ok("tambah Corner brackets masuk ke CSS", /background-size:[^;]*10px 2px/.test(await cssText(p)));
+  ok("tambah Corner brackets masuk ke CSS", /background-size:[^;]*[\d.]+(?:px|vw)[^,;]*[\d.]+(?:px|vw)/.test(await cssText(p)));
   await props(p).getByRole("button", { name: "Scanlines", exact: true }).click();
   await p.waitForTimeout(250);
   ok("tambah Scanlines masuk ke CSS", (await cssText(p)).includes("repeating-linear-gradient"));

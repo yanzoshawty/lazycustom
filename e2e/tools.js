@@ -173,7 +173,9 @@ function ok(name, cond, detail = "") {
   await dlg.waitFor();
   await dlg.locator("canvas").waitFor(); // canvas baru ada setelah gambar selesai dimuat
   ok("editor gambar terbuka dengan pratinjau canvas", (await dlg.locator("canvas").count()) === 1 && (await dlg.locator("canvas").evaluate((c) => c.width > 0)));
-  const srcBefore = await p.evaluate(() => [...document.querySelectorAll('[role="tabpanel"] img')].map((i) => i.src)[0]);
+  // Diperkecil ke daftar "Images in this design" saja, karena tab yang sama sekarang juga memuat thumbnail Pustaka gambar.
+  const DESIGN_IMGS = '[role="tabpanel"] ul[aria-label="Images in this design"] img';
+  const srcBefore = await p.evaluate((sel) => [...document.querySelectorAll(sel)].map((i) => i.src)[0], DESIGN_IMGS);
   await dlg.getByRole("button", { name: "Putar 90 derajat ke kanan" }).click();
   await dlg.getByRole("button", { name: "Balik horizontal" }).click();
   await dlg.getByRole("radio", { name: "1:1", exact: true }).check({ force: true });
@@ -185,7 +187,7 @@ function ok(name, cond, detail = "") {
   await dlg.getByRole("button", { name: "Apply", exact: true }).click();
   await p.waitForTimeout(800);
   ok("dialog tertutup setelah Apply", (await p.getByRole("dialog").count()) === 0);
-  const srcAfter = await p.evaluate(() => [...document.querySelectorAll('[role="tabpanel"] img')].map((i) => i.src));
+  const srcAfter = await p.evaluate((sel) => [...document.querySelectorAll(sel)].map((i) => i.src), DESIGN_IMGS);
   const edited = srcAfter.find((s) => s !== srcBefore && /^data:image\/(png|webp)/.test(s));
   ok("gambar diganti menjadi data URI baru yang valid", !!edited, srcAfter.map((s) => s.slice(0, 30)).join(" | "));
   if (edited) {
@@ -204,7 +206,7 @@ function ok(name, cond, detail = "") {
   await tab("Templates");
   const cards = await p.locator('button[aria-label^="Pakai template"]').count();
   ok("galeri memuat 16 template", cards === 16, cards);
-  for (const [t, check] of [["Phantom", /clip-path: polygon\(16px 0/], ["Quest", /display: grid/], ["Cyber", /lc-fx-shimmer-0/], ["Arena", /author-type="moderator"\] #content/], ["Brutal", /lc-fx-shake-0/]]) {
+  for (const [t, check] of [["Phantom", /clip-path: polygon\([\d.]+(?:px|vw) 0/], ["Quest", /display: grid/], ["Cyber", /lc-fx-shimmer-0/], ["Arena", /author-type="moderator"\] #content/], ["Brutal", /lc-fx-shake-0/]]) {
     await p.getByRole("button", { name: `Pakai template ${t}` }).click();
     await p.waitForTimeout(250);
     ok(`template ${t} memakai fitur khasnya di CSS`, check.test(await code()));

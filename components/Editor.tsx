@@ -16,11 +16,14 @@ import {
 } from "@phosphor-icons/react";
 import { copyText } from "@/lib/clipboard";
 import { generateCss } from "@/lib/design/css";
+import { findImage, patchImage, type ImagePatch, type ImageRef, type ImageScope } from "@/lib/design/image-target";
+import type { SendKind } from "@/lib/design/preview-doc";
 import { designsEqual, type GridPart, remoteImageHosts, remoteImageUrls, stripRemoteImages, type Design, type LayerId, type TemplateId } from "@/lib/design/model";
 import { decodeDesign, readShareHash } from "@/lib/design/share";
 import { designStore } from "@/lib/design/store";
 import { templateById } from "@/lib/design/templates";
 import { report } from "@/lib/report";
+import { CanvasContext, type BubbleScope, type CanvasApi } from "./canvas-context";
 import { DesignsPanel } from "./DesignsPanel";
 import { ErrorNotice } from "./ErrorNotice";
 import { CopyButton, ExportPanel, type CopyState } from "./ExportPanel";
@@ -143,12 +146,61 @@ function EditorInner() {
     }, key);
   }, []);
 
-  // Mengklik bagian chat di preview atau layer di daftar memilih layer. Di layar sempit
-  // pengaturannya langsung dibuka, di layar lebar Properties sudah tampil di kanan.
-  const selectLayer = useCallback((layer: LayerId) => {
+  // Bubble yang sedang diedit (utama atau satu peran), mode fokus, dan gambar yang diatur di canvas.
+  const [scope, setScope] = useState<BubbleScope>("default");
+  const [focusOn, setFocusOn] = useState(false);
+  const [imageEdit, setImageEdit] = useState<ImageRef | null>(null);
+
+  // Mengklik bagian chat di preview atau layer di daftar memilih layer. Klik di pesan juga memilih
+  // bubble peran pemilik pesan itu. Di layar sempit pengaturannya langsung dibuka, di layar lebar
+  // Properties sudah tampil di kanan.
+  const selectLayer = useCallback((layer: LayerId, role?: string | null) => {
     setSelected(layer);
+    if (role === "viewer") setScope("default");
+    else if (role === "member" || role === "moderator" || role === "owner") setScope(role);
+    // Layer Bubble dipilih lewat Layers, Elements, atau Animate (tanpa info peran dari klik preview):
+    // kembali ke Default, supaya tab peran yang tersisa dari klik sebelumnya tidak diam-diam terbawa.
+    else if (layer === "bubble") setScope("default");
     if (!window.matchMedia("(min-width: 1280px)").matches) setPanel("properties");
   }, []);
+
+  const imageTarget = useMemo(() => (imageEdit ? findImage(design, imageEdit) : null), [design, imageEdit]);
+  // Gambar dihapus, atau desain diganti, saat sedang diatur: turunan ini langsung jadi null, tanpa
+  // perlu menyinkronkan state di efek (imageEdit mentah tidak pernah dibaca di luar berkas ini).
+  const activeImageEdit = imageTarget ? imageEdit : null;
+  useEffect(() => {
+    if (!activeImageEdit) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setImageEdit(null);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [activeImageEdit]);
+
+  const onImageSet = useCallback(
+    (ref: { kind: "pin" | "panel"; scope: string; id: string }, patch: ImagePatch) => {
+      const target: ImageRef = ref.kind === "panel" ? { kind: "panel", id: ref.id } : { kind: "pin", scope: ref.scope as ImageScope, id: ref.id };
+      edit((d) => patchImage(d, target, patch), `img.${ref.id}`);
+    },
+    [edit],
+  );
+
+  const canvas = useMemo<CanvasApi>(
+    () => ({ scope, setScope, imageEdit: activeImageEdit, startImageEdit: setImageEdit, stopImageEdit: () => setImageEdit(null) }),
+    [scope, activeImageEdit],
+  );
+
+  // Jenis pesan yang ditampilkan saja di preview. Mengatur gambar di bubble selalu memfokuskan bubble itu.
+  const layerKind: SendKind | null =
+    selected === "superchat" || selected === "membership" || selected === "sticker"
+      ? selected
+      : ["bubble", "name", "text", "badges", "timestamp", "avatar", "row"].includes(selected)
+        ? scope === "default"
+          ? "viewer"
+          : scope
+        : null;
+  const imageKind: SendKind | null = imageEdit?.kind === "pin" ? (imageEdit.scope === "default" ? "viewer" : imageEdit.scope) : null;
+  const focusKind = imageKind ?? (focusOn ? layerKind : null);
+  const FOCUS_NAME: Record<SendKind, string> = { viewer: "Message", member: "Member", moderator: "Moderator", owner: "Owner", superchat: "Super Chat", membership: "Membership", sticker: "Sticker" };
+  const focusLabel = layerKind ? `Fokus ${FOCUS_NAME[layerKind]}` : "Fokus bubble";
 
   // Mode geser bagian langsung di preview. Hanya berlaku untuk layout Free.
   const [dragMode, setDragMode] = useState(false);
@@ -232,6 +284,7 @@ function EditorInner() {
         {copyState === "failed" ? <ErrorNotice code="COPY_BLOCKED" refId={copyRef} onDismiss={() => setCopyState("idle")} /> : null}
       </div>
 
+      <CanvasContext.Provider value={canvas}>
       <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-x-5 gap-y-4 xl:grid-cols-[320px_minmax(0,1fr)_340px]">
         {/* Preview: menempel di atas saat halaman di-scroll */}
         <div className="order-1 sticky top-0 z-20 -mx-3 border-b border-line bg-bg px-3 pb-2.5 pt-2 sm:-mx-5 sm:px-5 xl:order-2 xl:top-4 xl:mx-0 xl:self-start xl:border-0 xl:bg-transparent xl:p-0">
@@ -239,6 +292,14 @@ function EditorInner() {
             css={css}
             selected={selected}
             onSelect={selectLayer}
+            scaleRef={design.row.autoScale ? design.row.refWidth : 0}
+            focusKind={focusKind}
+            focusOn={focusOn}
+            onFocusToggle={layerKind ? () => setFocusOn((v) => !v) : undefined}
+            focusLabel={focusLabel}
+            imageTarget={imageTarget}
+            onImageSet={onImageSet}
+            onImageDone={canvas.stopImageEdit}
             freeDrag={freeDrag}
             onMovePart={movePart}
             frameClassName="h-[22dvh] min-h-[150px] sm:h-[32dvh] xl:h-[min(66dvh,620px)]"
@@ -285,6 +346,7 @@ function EditorInner() {
           </div>
         </aside>
       </div>
+      </CanvasContext.Provider>
 
       <div className="panel mt-10 p-4 sm:p-7">
         <ExportPanel css={css} codeRef={codeRef} copyState={copyState} onCopy={copyCss} />

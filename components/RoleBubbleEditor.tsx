@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ROLE_IDS, type Design, type RoleId, type Surface } from "@/lib/design/model";
+import { useCanvas, type BubbleScope } from "./canvas-context";
 import { ColorField, Segmented, ToggleField } from "./controls";
 import type { Edit } from "./Inspector";
 import { SurfaceEditor } from "./SurfaceEditor";
@@ -20,7 +21,11 @@ interface Props {
  * Membuat bubble khusus menyalin bubble utama sebagai titik awal, jadi tampilannya tidak melompat.
  */
 export function RoleBubbleEditor({ design: d, edit, children }: Props) {
-  const [tab, setTab] = useState<"default" | RoleId>("default");
+  // Di dalam Editor, tab mengikuti bubble yang diklik di preview. Di luar Editor (uji) memakai state lokal.
+  const canvas = useCanvas();
+  const [localTab, setLocalTab] = useState<BubbleScope>("default");
+  const tab = canvas ? canvas.scope : localTab;
+  const setTab = canvas ? canvas.setScope : setLocalTab;
   const override = tab === "default" ? null : d.roleBubbles[tab];
 
   const setOverride = (role: RoleId, fn: (o: NonNullable<Design["roleBubbles"][RoleId]>) => NonNullable<Design["roleBubbles"][RoleId]>, key: string) =>
@@ -67,7 +72,7 @@ export function RoleBubbleEditor({ design: d, edit, children }: Props) {
               {override.textColor !== null ? (
                 <ColorField label="Text color" value={override.textColor} onChange={(textColor) => setOverride(tab, (o) => ({ ...o, textColor }), "textColor")} />
               ) : null}
-              <SurfaceEditor surface={override.surface} onChange={(fn, key) => setOverride(tab, (o) => ({ ...o, surface: fn(o.surface) }), key)} />
+              <SurfaceEditor scope={tab} surface={override.surface} onChange={(fn, key) => setOverride(tab, (o) => ({ ...o, surface: fn(o.surface) }), key)} />
             </>
           ) : (
             <p className="rounded-field bg-surface-2 px-3 py-2 text-sm text-ink-2">

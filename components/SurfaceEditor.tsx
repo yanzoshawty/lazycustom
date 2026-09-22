@@ -1,5 +1,6 @@
 "use client";
 
+import type { ImageScope } from "@/lib/design/image-target";
 import type { Surface } from "@/lib/design/model";
 import { ColorField, FillField, Section, Segmented, SliderField } from "./controls";
 import { DecorationsEditor } from "./DecorationsEditor";
@@ -11,9 +12,11 @@ interface Props {
   /** Sembunyikan fill, misalnya saat warnanya datang dari tier YouTube. */
   hideFill?: boolean;
   fillLabel?: string;
+  /** Cakupan permukaan ini untuk mengatur gambar di canvas. Default: bubble utama. */
+  scope?: ImageScope;
 }
 
-export function SurfaceEditor({ surface, onChange, hideFill = false, fillLabel = "Fill" }: Props) {
+export function SurfaceEditor({ surface, onChange, hideFill = false, fillLabel = "Fill", scope = "default" }: Props) {
   return (
     <div className="grid gap-7">
       {hideFill ? null : (
@@ -68,8 +71,9 @@ export function SurfaceEditor({ surface, onChange, hideFill = false, fillLabel =
 
       <Section title="Dekorasi">
         <DecorationsEditor
+          scope={scope}
           decorations={surface.decorations}
-          onChange={(decorations, key) => onChange((s) => ({ ...s, decorations }), key)}
+          onChange={(updater, key) => onChange((s) => ({ ...s, decorations: updater(s.decorations) }), key)}
         />
       </Section>
     </div>

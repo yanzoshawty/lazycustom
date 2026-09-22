@@ -9,12 +9,14 @@ import {
   replaceImageSource,
   type Design,
 } from "@/lib/design/model";
-import { readImageFile, UPLOAD_MESSAGE } from "@/lib/design/upload";
 import { newDecoration } from "../DecorationsEditor";
 import { ImageEditor } from "../ImageEditor";
 import { newPanelImage } from "../PanelImagesEditor";
 import { SelectField, Section } from "../controls";
 import type { Edit } from "../Inspector";
+import { LibraryGrid } from "../LibraryGrid";
+import { useImageLibrary, useImportImage } from "../useImageLibrary";
+import { imageLibrary, type LibraryImage } from "@/lib/design/image-library";
 
 type Destination = "pin" | "fill" | "panel-front" | "panel-behind" | "frame";
 
@@ -54,6 +56,8 @@ export function UploadsPanel({ design: d, edit, onNotice }: Props) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
 
+  const library = useImageLibrary();
+  const importImage = useImportImage();
   const sources = imageSources(d);
   const used = dataImageChars(d);
 
@@ -87,25 +91,42 @@ export function UploadsPanel({ design: d, edit, onNotice }: Props) {
     return null;
   }
 
-  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setError(null);
-    setBusy(true);
-    const result = await readImageFile(file);
-    setBusy(false);
-    if (!result.ok) {
-      setError(UPLOAD_MESSAGE[result.reason]);
-      return;
-    }
-    if (used + result.dataUri.length > MAX_DESIGN_DATA_CHARS) {
+  /** Menaruh satu gambar dari pustaka ke tujuan, dengan pemeriksaan batas total gambar di desain ini. */
+  function placeFromLibrary(item: LibraryImage) {
+    if (used + item.dataUri.length > MAX_DESIGN_DATA_CHARS) {
       setError(`Total gambar unggahan di desain ini melebihi batas (${kb(MAX_DESIGN_DATA_CHARS)} KB). Hapus gambar yang tidak dipakai dulu.`);
       return;
     }
-    const problem = place(result.dataUri);
+    const problem = place(item.dataUri);
     if (problem) setError(problem);
-    else onNotice("Gambar diunggah");
+    else {
+      setError(null);
+      onNotice("Gambar ditaruh di desain");
+    }
+  }
+
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []).slice(0, 10);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setError(null);
+    setBusy(true);
+    let added: LibraryImage | null = null;
+    let count = 0;
+    const problems: string[] = [];
+    for (const file of files) {
+      const result = await importImage(file);
+      if (result.ok) {
+        count += 1;
+        added = result.item;
+      } else problems.push(`${file.name}: ${result.message}`);
+    }
+    setBusy(false);
+    if (problems.length) setError(problems.join(" "));
+    if (count === 0) return;
+    onNotice(count === 1 ? "Gambar disimpan di pustaka" : `${count} gambar disimpan di pustaka`);
+    // Satu gambar: langsung ditaruh di tujuan, seperti sebelumnya. Beberapa gambar: user memilih sendiri dari pustaka.
+    if (files.length === 1 && added) placeFromLibrary(added);
   }
 
   function applyEdit(dataUri: string) {
@@ -124,7 +145,7 @@ export function UploadsPanel({ design: d, edit, onNotice }: Props) {
   return (
     <div className="grid gap-7">
       <p className="text-sm text-ink-2">
-        Unggah PNG, JPEG, GIF, atau WebP (maks 100 KB per gambar), taruh di bubble, panel, atau avatar, lalu sesuaikan dengan Adjust.
+        Unggah PNG, JPEG, GIF, atau WebP. Gambar dimampatkan otomatis dan disimpan di komputer ini (di browser), tidak dikirim ke server. Taruh di bubble, panel, atau avatar, lalu atur posisinya langsung di canvas.
       </p>
 
       <Section title="Upload">
@@ -136,9 +157,9 @@ export function UploadsPanel({ design: d, edit, onNotice }: Props) {
           className="inline-flex h-11 w-fit items-center gap-2 rounded-field border border-line-strong bg-surface px-4 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent active:scale-95 disabled:opacity-60"
         >
           <UploadSimple size={18} weight="bold" aria-hidden="true" />
-          {busy ? "Membaca..." : "Pilih gambar"}
+          {busy ? "Memampatkan..." : "Pilih gambar"}
         </button>
-        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={pick} className="sr-only" tabIndex={-1} aria-label="Pilih file gambar" />
+        <input ref={fileRef} type="file" multiple accept="image/png,image/jpeg,image/gif,image/webp" onChange={pick} className="sr-only" tabIndex={-1} aria-label="Pilih file gambar" />
         {error ? (
           <p role="alert" className="rounded-field bg-danger-soft px-3 py-2 text-sm text-danger">
             {error}
@@ -149,11 +170,29 @@ export function UploadsPanel({ design: d, edit, onNotice }: Props) {
         </p>
       </Section>
 
+      <Section title={`Pustaka gambar (${library.items.length})`}>
+        {library.status === "memory" ? (
+          <p role="status" className="rounded-field bg-surface-2 px-3 py-2 text-xs text-ink-2">
+            Browser ini tidak mengizinkan penyimpanan permanen (mode privat?). Gambar di pustaka hilang saat tab ditutup.
+          </p>
+        ) : null}
+        {library.items.length === 0 ? (
+          <p className="rounded-field border border-dashed border-line-strong px-3 py-4 text-center text-sm text-ink-3">
+            Pustaka masih kosong. Gambar yang kamu unggah tersimpan di sini dan bisa dipakai di desain mana pun.
+          </p>
+        ) : (
+          <>
+            <LibraryGrid items={library.items} onPick={placeFromLibrary} onRemove={(it) => void imageLibrary.remove(it.id)} />
+            <p className="text-xs text-ink-3">Klik gambar untuk menaruhnya di tujuan yang dipilih. Menghapus dari pustaka tidak menghapusnya dari desain yang sudah memakainya.</p>
+          </>
+        )}
+      </Section>
+
       <Section title={`Images in this design (${sources.length})`}>
         {sources.length === 0 ? (
           <p className="rounded-field border border-dashed border-line-strong px-3 py-4 text-center text-sm text-ink-3">Belum ada gambar di desain ini.</p>
         ) : (
-          <ul className="grid gap-2">
+          <ul aria-label="Images in this design" className="grid gap-2">
             {sources.map((src) => {
               const uploaded = src.startsWith("data:");
               const gif = src.startsWith("data:image/gif");

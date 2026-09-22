@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { DecorationsEditor, newDecoration } from "@/components/DecorationsEditor";
 import { DECORATION_KINDS, decorationSchema, type Decoration } from "@/lib/design/model";
 
+/** onChange sekarang menerima fungsi pembaharu (lihat komentar di DecorationsEditor); tes membaca hasilnya dengan menerapkannya ke array sebelum-nya. */
+const applied = (onChange: ReturnType<typeof vi.fn>, before: Decoration[], call = 0): [Decoration[], string] => {
+  const [updater, key] = onChange.mock.calls[call] as [(prev: Decoration[]) => Decoration[], string];
+  return [updater(before), key];
+};
+
 describe("newDecoration", () => {
   it.each(DECORATION_KINDS)("%s: nilai bawaan lolos validasi skema", (kind) => {
     const d = newDecoration(kind);
@@ -24,7 +30,7 @@ describe("DecorationsEditor", () => {
     expect(screen.getByText(/Belum ada dekorasi/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Corner brackets" }));
     expect(onChange).toHaveBeenCalledTimes(1);
-    const [next, key] = onChange.mock.calls[0] as [Decoration[], string];
+    const [next, key] = applied(onChange, []);
     expect(next).toHaveLength(1);
     expect(next[0].kind).toBe("corners");
     expect(key).toBe("deco.add.corners");
@@ -53,7 +59,7 @@ describe("DecorationsEditor", () => {
     const onChange = vi.fn();
     render(<DecorationsEditor decorations={[a, b]} onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: "Hapus Glow #1" }));
-    const [next] = onChange.mock.calls[0] as [Decoration[]];
+    const [next] = applied(onChange, [a, b]);
     expect(next.map((d) => d.id)).toEqual([b.id]);
   });
 
@@ -63,7 +69,7 @@ describe("DecorationsEditor", () => {
     const onChange = vi.fn();
     render(<DecorationsEditor decorations={[a, b]} onChange={onChange} />);
     fireEvent.change(screen.getByLabelText("Blur"), { target: { value: "30" } });
-    const [next] = onChange.mock.calls[0] as [Decoration[]];
+    const [next] = applied(onChange, [a, b]);
     expect(next[0]).toMatchObject({ kind: "glow", blur: 30 });
     expect(next[1]).toEqual(b);
   });
@@ -75,7 +81,7 @@ describe("DecorationsEditor", () => {
       const onChange = vi.fn();
       render(<DecorationsEditor decorations={[image]} onChange={onChange} />);
       fireEvent.change(screen.getByLabelText("Link gambar atau GIF"), { target: { value: "https://cdn.example.com/a.gif" } });
-      const [next] = onChange.mock.calls[0] as [Decoration[]];
+      const [next] = applied(onChange, [image]);
       expect(next[0]).toMatchObject({ kind: "image", url: "https://cdn.example.com/a.gif" });
     });
 

@@ -195,7 +195,7 @@ describe("dekorasi bubble", () => {
   it("menjadikan glow sebagai box-shadow bertumpuk", () => {
     const d = clone("aurora");
     const css = generateCss(d);
-    expect(css).toMatch(/box-shadow: 0 0 18px 0px rgba\(92, 198, 245, 0\.3\), 0 0 30px 0px rgba\(139, 124, 255, 0\.22\)/);
+    expect(css).toMatch(/box-shadow: 0 0 20px 0px rgba\(255, 179, 217, 0\.3\), 0 0 26px 0px rgba\(201, 184, 255, 0\.22\)/);
   });
 
   it("membuat gradient border lewat ::before bermask", () => {

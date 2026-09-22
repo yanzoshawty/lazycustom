@@ -176,7 +176,9 @@ describe("animasi per elemen", () => {
   });
 
   it("memakai fill-mode backwards supaya clip-path avatar hexagon tidak tertimpa animasi wipe", () => {
-    const d = designFromTemplate("holo");
+    // Bukan template tertentu: hexagon adalah pilihan bentuk avatar umum, diuji langsung di sini.
+    const d = designFromTemplate("crystal");
+    d.avatar = { ...d.avatar, shape: "hexagon" };
     d.elements.avatar = { style: "wipe", duration: 400, delay: 0 };
     const css = generateCss(d);
     expect(css).toMatch(/#author-photo \{[^}]*animation: lc-el-wipe[^;]* backwards/);

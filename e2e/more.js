@@ -70,7 +70,7 @@ function ok(name, cond, detail = "") {
   await p.waitForTimeout(500);
   await p.fill("#design-name", "Desain Dibagikan");
   await p.getByRole("tab", { name: "Templates" }).click();
-  await p.getByRole("button", { name: "Pakai template Holo" }).click();
+  await p.getByRole("button", { name: "Pakai template Broadsheet" }).click();
   await p.getByRole("tab", { name: "Designs" }).click();
   await p.getByRole("button", { name: "Buat link Share" }).click();
   const link = await p.getByLabel("Link Share desain").inputValue();
@@ -86,10 +86,10 @@ function ok(name, cond, detail = "") {
   const other = await newPage();
   await other.p.goto(link, { waitUntil: "load" });
   await other.p.waitForTimeout(1200);
-  ok("membuka link Share: desain Holo dengan nama asli", (await other.p.inputValue("#design-name")) === "Desain Dibagikan");
+  ok("membuka link Share: desain Broadsheet dengan nama asli", (await other.p.inputValue("#design-name")) === "Desain Dibagikan");
   ok("pemberitahuan desain dari link Share muncul", (await other.p.getByText(/dibuka sebagai desain baru/).count()) === 1);
   ok("alamat dibersihkan dari hash", !(await other.p.evaluate(() => location.hash)));
-  ok("CSS desain terbagi memakai font Chakra Petch (Holo)", (await cssText(other.p)).includes("family=Chakra+Petch"));
+  ok("CSS desain terbagi memakai font Fraunces (Broadsheet)", (await cssText(other.p)).includes("family=Fraunces"));
   ok("desain bersama tersimpan sebagai desain baru", await (async () => { await other.p.getByRole("tab", { name: "Designs" }).click(); return (await other.p.getByText("My Designs (2/20)").count()) === 1; })());
   await other.ctx.close();
 

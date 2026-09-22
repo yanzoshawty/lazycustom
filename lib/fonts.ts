@@ -19,6 +19,8 @@ export const FONT_IDS = [
   "archivo-black",
   "press-start-2p",
   "bebas-neue",
+  "fraunces",
+  "special-elite",
 ] as const;
 
 export type FontId = (typeof FONT_IDS)[number];
@@ -80,6 +82,19 @@ export const FONTS: Record<FontId, FontDef> = {
     weights: "400",
   },
   "bebas-neue": { label: "Bebas Neue", hint: "Huruf kapital ramping dan tinggi", stack: '"Bebas Neue", "Impact", sans-serif', google: "Bebas Neue", weights: "400" },
+  fraunces: {
+    label: "Fraunces",
+    hint: "Serif editorial modern, bukan serif kaku",
+    stack: '"Fraunces", ui-serif, Georgia, serif',
+    google: "Fraunces",
+  },
+  "special-elite": {
+    label: "Special Elite",
+    hint: "Mesin tik, gaya vintage",
+    stack: '"Special Elite", "Courier New", monospace',
+    google: "Special Elite",
+    weights: "400",
+  },
 };
 
 export function fontImport(id: FontId): string | null {

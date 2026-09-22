@@ -149,7 +149,7 @@ describe("Editor: link Share", () => {
     await waitFor(() => expect(nameInput().value).toBe("Dari Teman"));
     expect(screen.getByText(/dibuka sebagai desain baru/)).toBeInTheDocument();
     expect(location.hash).toBe("");
-    expect(codeText()).toContain("family=Chakra+Petch");
+    expect(codeText()).toContain("family=Fraunces");
     expect(designStore.getSnapshot().saved).toHaveLength(2);
   });
 

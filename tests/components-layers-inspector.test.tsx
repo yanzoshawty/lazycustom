@@ -132,7 +132,8 @@ describe("Inspector", () => {
   });
 
   it("avatar hexagon menyembunyikan pengaturan ring", () => {
-    const d = designFromTemplate("holo");
+    // Bukan template tertentu: hexagon adalah pilihan bentuk avatar umum, diuji langsung di sini.
+    const d = { ...designFromTemplate("crystal"), avatar: { ...designFromTemplate("crystal").avatar, shape: "hexagon" as const } };
     const h = harness(d);
     render(<Inspector design={h.design} layer="avatar" edit={h.edit} />);
     expect(screen.getByText(/Ring tidak tersedia untuk bentuk Hexagon/)).toBeInTheDocument();

@@ -353,152 +353,176 @@ function terminal(): Design {
   });
 }
 
+/** Editorial: kertas koran krem, tinta gelap, tekstur halftone tipis, byline (timestamp) tampil, tanpa efek (tenang dengan sengaja). */
 function holo(): Design {
   const bubble = surface({
-    fill: grad("#1C2A3B", "#2A2244", 86, 120),
-    radius: 18,
+    fill: solid("#F4EEE1", 97),
+    radius: 3,
     padding: 12,
-    decorations: [ring("holo-ring", "#7DD3FC", "#C6B4FF", 2, 120, 95), glow("holo-glow", "#9FB4FF", 20, 0, 28)],
+    borderWidth: 1,
+    borderColor: "#2A2419",
+    decorations: [halftone("broadsheet-half", "#2A2419", 7, 6)],
   });
-  return make("holo", "Holo", {
-    font: "chakra-petch",
+  return make("holo", "Broadsheet", {
+    font: "fraunces",
     edge: "none",
-    animation: { style: "zoom", duration: 360, easing: "smooth" },
+    animation: { style: "fade", duration: 260, easing: "smooth" },
     bubble: { ...bubble, show: true, roleTint: false },
     nameStyle: {
       ...BASE.nameStyle,
-      colors: { viewer: "#D0D6FF", member: "#8FF0D0", moderator: "#9CC8FF", owner: "#FFE29A" },
+      weight: 700,
+      spacing: 1,
+      colors: { viewer: "#2A2419", member: "#2B5C3F", moderator: "#243B66", owner: "#6B2027" },
     },
-    text: { ...BASE.text, color: "#F3F1FF" },
-    avatar: { ...BASE.avatar, shape: "hexagon" },
+    text: { ...BASE.text, color: "#2A2419", weight: 500, lineHeight: 145 },
+    avatar: { ...BASE.avatar, shape: "square", ringWidth: 1, ringColor: "#2A2419" },
+    timestamp: { show: true, opacity: 55, size: 75 },
     ...cards(bubble, {
-      mode: "tier",
-      header: grad("#2C5B85", "#41397A"),
-      memberHeader: grad("#0F7B62", "#0B5A4A"),
-      name: "#F3F1FF",
-      amount: "#FFFFFF",
-      text: "#F3F1FF",
+      mode: "custom",
+      header: solid("#E5DCC8"),
+      memberHeader: solid("#DCEBDD"),
+      name: "#2A2419",
+      amount: "#2A2419",
+      text: "#2A2419",
     }),
   });
 }
 
+/** VTuber/pastel: bubble solid warna peach candy, sangat bulat, detak lembut di avatar. */
 function pulse(): Design {
   const bubble = surface({
-    fill: solid("#6FCBFA", 97),
-    radius: 26,
-    padding: 12,
-    decorations: [glow("pulse-glow", "#7DD3FC", 22, 2, 45)],
+    fill: solid("#FFB199", 97),
+    radius: 28,
+    padding: 13,
+    decorations: [glow("bloom-glow", "#FF9EC4", 18, 2, 38), halftone("bloom-dots", "#FFFFFF", 7, 8)],
   });
-  return make("pulse", "Pulse", {
-    font: "exo-2",
+  return make("pulse", "Bloom", {
+    font: "baloo-2",
     edge: "none",
     animation: { style: "pop", duration: 420, easing: "bounce" },
     bubble: { ...bubble, show: true, roleTint: false },
     nameStyle: {
       ...BASE.nameStyle,
-      colors: { viewer: "#0B3A55", member: "#0A5B45", moderator: "#0B3E86", owner: "#7A4A00" },
+      colors: { viewer: "#7A2A3A", member: "#0E6B52", moderator: "#1E4A8C", owner: "#8C5A0E" },
     },
-    text: { ...BASE.text, color: "#06202E", weight: 600 },
-    avatar: { ...BASE.avatar, ringWidth: 2, ringColor: "#EAF7FF" },
+    text: { ...BASE.text, color: "#5A2E1E", weight: 600 },
+    avatar: { ...BASE.avatar, ringWidth: 3, ringColor: "#FFFFFF" },
+    effects: [effect("pulse", 4, 3)],
     ...cards(bubble, {
       mode: "custom",
-      header: solid("#4FB6E8"),
-      memberHeader: solid("#7BE5C4"),
-      name: "#06202E",
-      amount: "#06202E",
-      text: "#06202E",
+      header: solid("#FFD1C2"),
+      memberHeader: solid("#C7F3E0"),
+      name: "#5A2E1E",
+      amount: "#5A2E1E",
+      text: "#5A2E1E",
     }),
   });
 }
 
+/** Editorial/retro: memo mesin tik, sudut chamfer ala tiket, tanda sudut merah, kedip lampu tua yang halus pada nama. */
 function liteGlass(): Design {
   const bubble = surface({
-    fill: solid("#FFFFFF", 12),
-    radius: 14,
+    fill: solid("#221D17", 94),
+    radius: 2,
     padding: 11,
-    decorations: [ring("lite-ring", "#FFFFFF", "#7DD3FC", 1, 135, 55)],
+    borderWidth: 1,
+    borderColor: "#8A7A5C",
+    shape: "chamfer",
+    cut: 10,
+    decorations: [stripes("gazette-grain", "#F2E9D8", 2, 16, 0, 4), corners("gazette-stamp", "#B33B2E", 8, 1)],
   });
-  return make("lite-glass", "Lite Glass", {
-    font: "dm-sans",
-    edge: "soft",
-    animation: { style: "fade", duration: 300, easing: "smooth" },
+  return make("lite-glass", "Gazette", {
+    font: "special-elite",
+    edge: "none",
+    animation: { style: "fade", duration: 280, easing: "smooth" },
     bubble: { ...bubble, show: true, roleTint: false },
     nameStyle: {
       ...BASE.nameStyle,
-      colors: { viewer: "#DDEBF5", member: "#8FF0D0", moderator: "#9CD0FF", owner: "#FFE29A" },
+      uppercase: true,
+      spacing: 1,
+      weight: 700,
+      colors: { viewer: "#F2E9D8", member: "#9FD9B4", moderator: "#9FC1E8", owner: "#E8C77A" },
     },
-    text: { ...BASE.text, color: "#FFFFFF" },
+    text: { ...BASE.text, color: "#F2E9D8", weight: 400 },
+    avatar: { ...BASE.avatar, shape: "square", ringWidth: 1, ringColor: "#8A7A5C" },
+    timestamp: { show: true, opacity: 50, size: 75 },
+    effects: [effect("flicker", 2, 1)],
     ...cards(bubble, {
-      mode: "tier",
-      header: grad("#2C6E96", "#1E4E6E", 80),
-      memberHeader: grad("#0F7B62", "#0B5A4A", 80),
-      name: "#FFFFFF",
-      amount: "#FFFFFF",
-      text: "#FFFFFF",
+      mode: "custom",
+      header: solid("#2E2820"),
+      memberHeader: solid("#233024"),
+      name: "#F2E9D8",
+      amount: "#E8C77A",
+      text: "#F2E9D8",
     }),
   });
 }
 
+/** VTuber/pastel: bubble putih ala stiker die-cut, border dan shadow keras tapi warnanya pastel, tekstur titik krem tipis. */
 function stickerPop(): Design {
   const bubble = surface({
-    fill: solid("#EAF7FF", 100),
-    radius: 12,
+    fill: solid("#FFFFFF", 100),
+    radius: 16,
     padding: 10,
     borderWidth: 3,
-    borderColor: "#10151B",
+    borderColor: "#FF9EC4",
     shadow: "hard",
-    shadowColor: "#5CC6F5",
+    shadowColor: "#8FE3C7",
+    decorations: [halftone("sticker-dots", "#FFD1E8", 6, 10)],
   });
-  return make("sticker-pop", "Sticker Pop", {
-    font: "space-grotesk",
+  return make("sticker-pop", "Sticker", {
+    font: "baloo-2",
     edge: "none",
     animation: { style: "pop", duration: 380, easing: "bounce" },
     row: { ...BASE.row, gap: 12 },
     bubble: { ...bubble, show: true, roleTint: false },
     nameStyle: {
       ...BASE.nameStyle,
-      colors: { viewer: "#33475A", member: "#0A7A55", moderator: "#1462B8", owner: "#B0400C" },
+      colors: { viewer: "#C2447D", member: "#0E8F5E", moderator: "#2A62C9", owner: "#C97A12" },
     },
-    text: { ...BASE.text, color: "#10151B", weight: 600 },
+    text: { ...BASE.text, color: "#2B2230", weight: 600 },
     ...cards(bubble, {
       mode: "custom",
-      header: solid("#BFE9FF"),
-      memberHeader: solid("#C7F3E0"),
-      name: "#10151B",
-      amount: "#10151B",
-      text: "#10151B",
+      header: solid("#FFE1F0"),
+      memberHeader: solid("#DFFBEF"),
+      name: "#2B2230",
+      amount: "#2B2230",
+      text: "#2B2230",
     }),
   });
 }
 
+/** VTuber/pastel: bubble krem lembut, border dan glow gradasi pink ke lavender, mengambang pelan. */
 function aurora(): Design {
   const bubble = surface({
-    fill: grad("#0F3B57", "#1B2A66", 88, 135),
-    radius: 16,
-    padding: 12,
+    fill: solid("#FFF7FA", 96),
+    radius: 22,
+    padding: 13,
     decorations: [
-      ring("aurora-ring", "#5CC6F5", "#8B7CFF", 1, 135, 80),
-      glow("aurora-g1", "#5CC6F5", 18, 0, 30),
-      glow("aurora-g2", "#8B7CFF", 30, 0, 22),
+      ring("dreamy-ring", "#FFC6E0", "#C9B8FF", 2, 135, 85),
+      glow("dreamy-glow-a", "#FFB3D9", 20, 0, 30),
+      glow("dreamy-glow-b", "#C9B8FF", 26, 0, 22),
     ],
   });
-  return make("aurora", "Aurora", {
-    font: "exo-2",
-    edge: "none",
+  return make("aurora", "Dreamy", {
+    font: "fredoka",
+    edge: "soft",
     animation: { style: "blur-in", duration: 420, easing: "smooth" },
     bubble: { ...bubble, show: true, roleTint: false },
     nameStyle: {
       ...BASE.nameStyle,
-      colors: { viewer: "#C9DAFF", member: "#8FF0D0", moderator: "#9CC8FF", owner: "#FFE29A" },
+      colors: { viewer: "#C2447D", member: "#3F8F6E", moderator: "#5A7FC7", owner: "#8C6318" },
     },
-    text: { ...BASE.text, color: "#F2F6FF" },
+    text: { ...BASE.text, color: "#3A2A45", weight: 500 },
+    avatar: { ...BASE.avatar, ringWidth: 2, ringColor: "#FFC6E0" },
+    effects: [effect("float", 3, 2)],
     ...cards(bubble, {
-      mode: "tier",
-      header: grad("#1C5F8A", "#3A3391"),
-      memberHeader: grad("#0F7B62", "#0B5A4A"),
-      name: "#F2F6FF",
-      amount: "#FFFFFF",
-      text: "#F2F6FF",
+      mode: "custom",
+      header: grad("#FFE1F0", "#E8DFFF", 100),
+      memberHeader: solid("#DFF6EC"),
+      name: "#3A2A45",
+      amount: "#3A2A45",
+      text: "#3A2A45",
     }),
   });
 }
@@ -597,11 +621,14 @@ function phantom(): Design {
 }
 
 /** Kotak dialog ala RPG: biru tua, garis putih ganda, nama di atas pesan (kerangka grid), teks muncul menyapu. */
+/** Retro-gaming: kotak dialog RPG piksel. Kerangka grid dan gaya wipe dipertahankan (lihat design-fx.test.ts);
+ * yang diperbaiki di sini hanya kepadatan (padding, line-height, jarak grid) dan waktu animasi supaya
+ * tidak terasa seperti kotak kosong sebelum teksnya selesai menyapu masuk. */
 function quest(): Design {
   const bubble = surface({
     fill: grad("#10238A", "#050A3A", 96, 180),
     radius: 6,
-    padding: 12,
+    padding: 9,
     borderWidth: 3,
     borderColor: "#FFFFFF",
     decorations: [ring("quest-ring", "#B8C4FF", "#FFFFFF", 2, 180, 90), glow("quest-glow", "#5B6CFF", 12, 0, 30)],
@@ -617,7 +644,7 @@ function quest(): Design {
       grid: {
         columns: [1],
         rows: 2,
-        gap: 8,
+        gap: 5,
         cells: {
           name: { col: 1, row: 1, colSpan: 1, rowSpan: 1, alignX: "start", alignY: "center" },
           badges: { col: 1, row: 1, colSpan: 1, rowSpan: 1, alignX: "end", alignY: "center" },
@@ -635,9 +662,9 @@ function quest(): Design {
       size: 90,
       colors: { viewer: "#FFD866", member: "#8CFFB0", moderator: "#8CC8FF", owner: "#FF9CB0" },
     },
-    text: { ...BASE.text, color: "#FFFFFF", weight: 400, lineHeight: 165, size: 92 },
+    text: { ...BASE.text, color: "#FFFFFF", weight: 400, lineHeight: 135, size: 92 },
     avatar: { ...BASE.avatar, shape: "square", size: 36, ringWidth: 3, ringColor: "#FFFFFF" },
-    elements: { ...DEFAULT_ELEMENTS, name: anim("pop", 260), message: anim("wipe", 800, 150) },
+    elements: { ...DEFAULT_ELEMENTS, name: anim("pop", 220), message: anim("wipe", 420, 60) },
     labels: [
       tag("label-member", "MEMBER", "member", "#10238A", "#8CFFB0", { radius: 2, size: 62, spacing: 0 }),
       tag("label-mod", "MOD", "moderator", "#10238A", "#8CC8FF", { radius: 2, size: 62, spacing: 0 }),
@@ -754,20 +781,20 @@ export interface Template {
 
 export const TEMPLATES: Template[] = [
   { id: "crystal", name: "Crystal", tagline: "Glass gelap, gradient border, glow biru", design: crystal() },
-  { id: "aurora", name: "Aurora", tagline: "Gradient biru ke ungu, double glow", design: aurora() },
-  { id: "holo", name: "Holo", tagline: "Gradient border dua warna, avatar hexagon", design: holo() },
+  { id: "aurora", name: "Dreamy", tagline: "VTuber pastel: krem lembut, border gradasi pink-lavender, mengambang", design: aurora() },
+  { id: "holo", name: "Broadsheet", tagline: "Editorial: kertas krem, tinta gelap, halftone tipis, byline tampil", design: holo() },
   { id: "grid", name: "Grid", tagline: "Scanlines dan corner brackets", design: grid() },
   { id: "hud", name: "HUD", tagline: "Accent bar, nama di atas, font mono", design: hud() },
   { id: "terminal", name: "Terminal", tagline: "Monospace dengan timestamp", design: terminal() },
-  { id: "pulse", name: "Pulse", tagline: "Bubble biru solid, animasi pop", design: pulse() },
-  { id: "lite-glass", name: "Lite Glass", tagline: "Kaca tipis, ringan di atas gameplay", design: liteGlass() },
+  { id: "pulse", name: "Bloom", tagline: "VTuber pastel: bubble peach candy bulat, detak lembut di avatar", design: pulse() },
+  { id: "lite-glass", name: "Gazette", tagline: "Editorial/retro: memo mesin tik gelap, sudut chamfer, kedip lampu tua", design: liteGlass() },
   { id: "frost", name: "Frost", tagline: "Bubble terang, teks gelap", design: frost() },
   { id: "cyber", name: "Cyber", tagline: "Neon berkilau, nama glitch, cahaya berdenyut", design: cyber() },
   { id: "phantom", name: "Phantom", tagline: "Gaya game aksi: merah, hitam, potongan miring", design: phantom() },
-  { id: "quest", name: "Quest", tagline: "Kotak dialog RPG dengan teks menyapu", design: quest() },
+  { id: "quest", name: "Quest", tagline: "Kotak dialog RPG piksel dengan teks menyapu", design: quest() },
   { id: "arena", name: "Arena", tagline: "HUD esports, bubble beda tiap peran", design: arena() },
   { id: "brutal", name: "Brutal", tagline: "Brutalism: garis tebal, warna mencolok", design: brutal() },
-  { id: "sticker-pop", name: "Sticker Pop", tagline: "Garis tebal dan hard shadow", design: stickerPop() },
+  { id: "sticker-pop", name: "Sticker", tagline: "VTuber pastel: stiker die-cut putih, border dan shadow pastel", design: stickerPop() },
   { id: "plain", name: "Plain", tagline: "Tanpa bubble, teks bersih", design: make("plain", "Plain", {}) },
 ];
 

@@ -308,6 +308,9 @@ function hud(): Design {
     edge: "none",
     animation: { style: "fade", duration: 280, easing: "smooth" },
     message: { layout: "stacked", order: ["name", "badges", "timestamp", "message"] },
+    // Nama sendirian di baris atas (bukan sebaris dengan pesan), jadi avatar dikecilkan supaya sejajar
+    // dengan tinggi baris nama saja, bukan meluber ke baris pesan di bawahnya.
+    avatar: { ...BASE.avatar, size: 24 },
     bubble: { ...bubble, show: true, roleTint: false },
     nameStyle: { ...BASE.nameStyle, size: 90, colors: { ...NAMES.tech, viewer: "#8FB2C8" } },
     text: { ...BASE.text, color: "#DCEBF5" },

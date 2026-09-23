@@ -405,7 +405,7 @@ describe("UploadsPanel", () => {
   it("mendaftar semua gambar dengan jenis, ukuran, dan jumlah pemakaian", () => {
     const h = withImages();
     render(<UploadsPanel design={h.design} edit={h.edit} onNotice={() => undefined} />);
-    expect(screen.getByText(/Images in this design \(3\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Gambar di desain ini \(3\)/)).toBeInTheDocument();
     expect(screen.getByText(/^PNG, \d+ KB/)).toBeInTheDocument();
     expect(screen.getByText("cdn.example.com")).toBeInTheDocument();
     expect(screen.getAllByText(/Dipakai di 1 tempat/)).toHaveLength(3);

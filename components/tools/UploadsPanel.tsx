@@ -188,11 +188,11 @@ export function UploadsPanel({ design: d, edit, onNotice }: Props) {
         )}
       </Section>
 
-      <Section title={`Images in this design (${sources.length})`}>
+      <Section title={`Gambar di desain ini (${sources.length})`}>
         {sources.length === 0 ? (
           <p className="rounded-field border border-dashed border-line-strong px-3 py-4 text-center text-sm text-ink-3">Belum ada gambar di desain ini.</p>
         ) : (
-          <ul aria-label="Images in this design" className="grid gap-2">
+          <ul aria-label="Gambar di desain ini" className="grid gap-2">
             {sources.map((src) => {
               const uploaded = src.startsWith("data:");
               const gif = src.startsWith("data:image/gif");

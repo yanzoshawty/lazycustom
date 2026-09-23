@@ -173,8 +173,8 @@ function ok(name, cond, detail = "") {
   await dlg.waitFor();
   await dlg.locator("canvas").waitFor(); // canvas baru ada setelah gambar selesai dimuat
   ok("editor gambar terbuka dengan pratinjau canvas", (await dlg.locator("canvas").count()) === 1 && (await dlg.locator("canvas").evaluate((c) => c.width > 0)));
-  // Diperkecil ke daftar "Images in this design" saja, karena tab yang sama sekarang juga memuat thumbnail Pustaka gambar.
-  const DESIGN_IMGS = '[role="tabpanel"] ul[aria-label="Images in this design"] img';
+  // Diperkecil ke daftar "Gambar di desain ini" saja, karena tab yang sama sekarang juga memuat thumbnail Pustaka gambar.
+  const DESIGN_IMGS = '[role="tabpanel"] ul[aria-label="Gambar di desain ini"] img';
   const srcBefore = await p.evaluate((sel) => [...document.querySelectorAll(sel)].map((i) => i.src)[0], DESIGN_IMGS);
   await dlg.getByRole("button", { name: "Putar 90 derajat ke kanan" }).click();
   await dlg.getByRole("button", { name: "Balik horizontal" }).click();

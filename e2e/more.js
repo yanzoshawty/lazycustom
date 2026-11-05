@@ -12,7 +12,7 @@ function ok(name, cond, detail = "") {
   const pageErrors = [];
   async function newPage(opts = {}) {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, ...opts });
-    await ctx.addInitScript(() => { try { if (!localStorage.getItem("lc-theme")) localStorage.setItem("lc-theme", "dark"); } catch {} });
+    await ctx.addInitScript(() => { try { localStorage.setItem("lc-tour-done", "1"); if (!localStorage.getItem("lc-theme")) localStorage.setItem("lc-theme", "dark"); } catch {} });
     const p = await ctx.newPage();
     p.setDefaultTimeout(8000);
     p.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));

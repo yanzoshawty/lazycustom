@@ -794,26 +794,53 @@ export function generateCss(d: Design): string {
   out.push(
     "/* Lencana */\n" +
       (d.badges.show
-        ? rule(`${M} #chat-badges`, [
+        ? // Ukuran huruf sama dengan nama, jadi 1em di ikon = setinggi nama dan ikut skala otomatis.
+          // Karakter nol-lebar di ::before memberi wadah ini garis dasar teks: wadah disejajarkan ke garis
+          // dasar nama, lalu ikon ditengahkan di dalam tinggi baris yang sama. Hasilnya ikon tepat di
+          // tengah baris nama, tidak melorot seperti saat wadah ditengahkan terhadap seluruh baris flex.
+          rule(`${M} #chat-badges`, [
             ["order", idx("badges")],
             ["display", "inline-flex"],
-            ["align-self", "center"],
+            ["align-items", "center"],
+            ["align-self", "baseline"],
+            ["gap", "0.2em"],
+            ["font-size", `${n.size}%`],
             ["margin", hm],
+          ]) +
+          "\n" +
+          rule(`${M} #chat-badges::before`, [
+            ["content", '"\\200B"'],
+            ["display", "block"],
+            ["width", "0"],
+            ["overflow", "hidden"],
           ]) +
           "\n" +
           // Kosong berarti tidak ada lencana: jangan sisakan item yang membawa margin.
           rule(`${M} #chat-badges:empty`, [["display", "none"]]) +
           "\n" +
+          rule(`${M} ${SEL.badge}`, [
+            ["display", "inline-flex"],
+            ["width", "1em"],
+            ["height", "1em"],
+            ["margin", "0"],
+            ["vertical-align", "middle"],
+          ]) +
+          "\n" +
+          rule([`${M} ${SEL.badge} img`, `${M} ${SEL.badge} svg`, `${M} ${SEL.badge} yt-icon`], [
+            ["display", "block"],
+            ["width", "100%"],
+            ["height", "100%"],
+          ]) +
+          "\n" +
           // Tombol Top Fan (#1) adalah elemen sendiri di luar chip, tepat setelahnya di DOM asli.
+          // Isinya teks, jadi garis dasarnya disejajarkan langsung dengan garis dasar nama.
           rule(`${M} #before-content-buttons`, [["display", "contents"]]) +
           "\n" +
           rule(`${M} #before-content-buttons > *`, [
             ["order", idx("badges")],
-            ["align-self", "center"],
+            ["align-self", "baseline"],
             ["margin", hm],
-          ]) +
-          "\n" +
-          rule(`${M} ${SEL.badge}`, [["vertical-align", "middle"]])
+          ])
         : rule([`${M} #chat-badges`, `${M} #before-content-buttons`, `${M} ${SEL.badge}`], [["display", "none"]])),
   );
 

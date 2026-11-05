@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { ArrowRight, GithubLogo } from "@phosphor-icons/react";
 import type { SendKind } from "@/lib/design/preview-doc";
 import { TEMPLATES } from "@/lib/design/templates";
+import { BubbleField } from "../BubbleField";
 import { Logo } from "../Logo";
 import ScrollReveal from "../reactbits/ScrollReveal";
 import SplitText from "../reactbits/SplitText";
 import { Thumb } from "../TemplatesPanel";
 import { ThemeToggle } from "../ThemeToggle";
 import { demoDesign } from "./demo-design";
+import { Intro } from "./Intro";
 import { LivePreview } from "./LivePreview";
 import { SmoothScroll } from "./SmoothScroll";
 
@@ -50,7 +52,7 @@ function Nav() {
     <header className="sticky top-0 z-30 border-b border-line bg-bg">
       <nav aria-label="Navigasi utama" className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:px-6">
         <Link href="/" aria-label="Lazycustom Livechat, halaman utama" className="mr-auto inline-flex h-11 items-center rounded-field">
-          <Logo compact />
+          <Logo short />
         </Link>
         <a href="#peran" className="hidden h-11 items-center rounded-field px-3 text-sm font-semibold text-ink-2 transition hover:text-accent md:inline-flex">
           Per peran
@@ -70,14 +72,31 @@ function Nav() {
   );
 }
 
+/** Intro masih menutupi halaman selama <html> bertanda intro-pending (dipasang dan dilepas oleh Intro). */
+function subscribeIntro(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
+const introDoneSnapshot = () => !document.documentElement.classList.contains("intro-pending");
+const introDoneServer = () => true;
+
+const HEADLINE = "Chat live YouTube yang terasa punyamu sendiri";
+// min-h tiga baris: dengan Outfit judul ini tiga baris di HP maupun desktop. Tinggi dipesan sejak awal supaya
+// pergantian dari font cadangan ke Outfit (beda lebar, beda jumlah baris) tidak mendorong isi hero ke bawah.
+const HEADLINE_CLASS = "block min-h-[3.12em] font-display text-[clamp(2.4rem,5.2vw,4.4rem)] font-bold leading-[1.04] tracking-tight text-ink";
+
 function Hero() {
   const root = useRef<HTMLElement>(null);
   const design = useMemo(() => demoDesign(), []);
+  // Animasi judul dan masuknya hero menunggu intro selesai, supaya pengunjung baru benar-benar melihatnya.
+  const introDone = useSyncExternalStore(subscribeIntro, introDoneSnapshot, introDoneServer);
 
   // Urutan masuk: judul (SplitText), lalu produk dan penjelasannya. Tombol aksi sengaja tidak dianimasikan
   // supaya selalu terlihat dan bisa diklik sejak frame pertama.
   useGSAP(
     () => {
+      if (!introDone) return;
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const tl = gsap.timeline({ defaults: { duration: 0.7, ease: "power3.out" } });
@@ -85,15 +104,18 @@ function Hero() {
           .from(".hero-sub", { y: 16, autoAlpha: 0 }, 0.45);
       });
     },
-    { scope: root },
+    { scope: root, dependencies: [introDone] },
   );
 
   return (
-    <section ref={root} aria-labelledby="hero-title" className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-16 pt-10 sm:px-6 md:pt-16 lg:min-h-[calc(100dvh-4rem)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14 lg:pb-20">
+    <section ref={root} className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-16 pt-10 sm:px-6 md:pt-16 lg:min-h-[calc(100dvh-4rem)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14 lg:pb-20">
       <div className="grid gap-6">
-        <h1 id="hero-title" className="font-display text-[clamp(2.4rem,5.2vw,4.4rem)] font-bold leading-[1.04] tracking-tight text-ink">
-          <SplitText text="Chat live YouTube yang terasa punyamu sendiri" tag="span" splitType="words" effect="rise" delay={60} duration={0.9} textAlign="left" trigger="load" className="block" />
-        </h1>
+        {/* SplitText merender <h1> sendiri: aria-label yang dipasang GSAP SplitText sah di heading, tidak di <span>. */}
+        {introDone ? (
+          <SplitText text={HEADLINE} tag="h1" splitType="words" effect="rise" delay={60} duration={0.9} textAlign="left" trigger="load" className={HEADLINE_CLASS} />
+        ) : (
+          <h1 className={HEADLINE_CLASS}>{HEADLINE}</h1>
+        )}
         <p className="hero-sub max-w-[46ch] text-lg leading-relaxed text-ink-2">
           Desain bubble untuk viewer, member, moderator, sampai owner. Salin CSS-nya, tempel di OBS. Gratis dan tanpa akun.
         </p>
@@ -143,6 +165,7 @@ function Roles() {
           <div className="sticky top-16 z-10 -mx-4 bg-surface px-4 pb-3 pt-2 sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mt-6 lg:p-0">
             <LivePreview
               design={design}
+              lazy
               focus={STEPS[active].kind}
               title={`Simulasi chat: ${STEPS[active].title}`}
               className="bubble-tail h-[220px] border border-line sm:h-[300px] lg:h-[420px]"
@@ -166,7 +189,8 @@ function Why() {
   return (
     <section aria-label="Kenapa dibuat" className="mx-auto max-w-5xl px-4 py-20 sm:px-6 md:py-28">
       <ScrollReveal
-        baseOpacity={0.15}
+        // 0.5 menjaga kontras 3:1 (teks besar) bahkan sebelum kata-katanya terungkap.
+        baseOpacity={0.5}
         enableBlur={false}
         baseRotation={0}
         containerClassName="my-0"
@@ -269,7 +293,9 @@ function Footer() {
 export function Landing() {
   return (
     <>
+      <Intro />
       <SmoothScroll />
+      <BubbleField />
       <Nav />
       <main className="w-full max-w-full overflow-x-clip">
         <Hero />

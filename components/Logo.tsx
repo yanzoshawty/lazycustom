@@ -13,13 +13,18 @@ export function LogoMark({ size = 28 }: { size?: number }) {
   );
 }
 
-/** Wordmark: "Livechat" dicetak lebih ringan supaya nama utama tetap terbaca pertama. */
-export function Logo({ compact = false }: { compact?: boolean }) {
+/**
+ * Wordmark: "Livechat" dicetak lebih ringan supaya nama utama tetap terbaca pertama.
+ * compact: di bawah sm hanya simbol (header editor yang padat). short: di bawah sm hanya "Lazycustom".
+ * Disembunyikan dengan display none, bukan sr-only: link pembungkusnya sudah punya aria-label, dan teks
+ * sr-only yang absolut ikut bergeser saat font dimuat (tercatat sebagai layout shift).
+ */
+export function Logo({ compact = false, short = false }: { compact?: boolean; short?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <LogoMark />
-      <span className={`font-display text-lg leading-none tracking-tight text-ink sm:text-xl ${compact ? "max-sm:sr-only" : "max-[359px]:sr-only"}`}>
-        <span className="font-bold">Lazycustom</span> <span className="font-medium text-ink-2">Livechat</span>
+      <span className={`font-display text-lg leading-none tracking-tight text-ink sm:text-xl ${compact ? "max-sm:hidden" : "max-[359px]:hidden"}`}>
+        <span className="font-bold">Lazycustom</span> <span className={`font-medium text-ink-2 ${short ? "max-sm:hidden" : ""}`}>Livechat</span>
       </span>
     </span>
   );

@@ -1,7 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import { GeistMono } from "geist/font/mono";
-import "@fontsource-variable/outfit";
 import "./globals.css";
+
+// Outfit lewat next/font: di-preload dan diberi font cadangan berukuran sama, jadi pertukaran font tidak
+// menggeser layout. Subset latin cukup untuk teks antarmuka; chat di preview memuat fontnya sendiri.
+const outfit = localFont({
+  src: "../node_modules/@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2",
+  weight: "100 900",
+  variable: "--font-outfit",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Lazycustom Livechat: desain chat live YouTube untuk OBS",
@@ -21,7 +30,7 @@ const themeScript = `(function(){try{var t=localStorage.getItem('lc-theme');var 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={GeistMono.variable} suppressHydrationWarning>
+    <html lang="id" className={`${outfit.variable} ${GeistMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

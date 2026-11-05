@@ -13,7 +13,7 @@ function ok(name, cond, detail = "") {
 (async () => {
   const browser = await chromium.launch({ args: ["--no-sandbox"] });
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, hasTouch: true });
-  await ctx.addInitScript(() => { try { localStorage.setItem("lc-theme", "dark"); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem("lc-tour-done", "1"); localStorage.setItem("lc-theme", "dark"); } catch {} });
   const p = await ctx.newPage();
   p.setDefaultTimeout(8000);
   const csp = [], pageErrors = [];
@@ -221,7 +221,7 @@ function ok(name, cond, detail = "") {
 
   // ---------- 10. Mobile ----------
   const m = await browser.newContext({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  await m.addInitScript(() => { try { localStorage.setItem("lc-theme", "dark"); } catch {} });
+  await m.addInitScript(() => { try { localStorage.setItem("lc-tour-done", "1"); localStorage.setItem("lc-theme", "dark"); } catch {} });
   const mp = await m.newPage(); mp.setDefaultTimeout(8000);
   await mp.goto(BASE, { waitUntil: "load" }); await mp.waitForTimeout(700);
   const tabH = await mp.getByRole("tab").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));

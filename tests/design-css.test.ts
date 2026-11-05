@@ -195,7 +195,7 @@ describe("dekorasi bubble", () => {
   it("menjadikan glow sebagai box-shadow bertumpuk", () => {
     const d = clone("aurora");
     const css = generateCss(d);
-    expect(css).toMatch(/box-shadow: 0 0 20px 0px rgba\(255, 179, 217, 0\.3\), 0 0 26px 0px rgba\(201, 184, 255, 0\.22\)/);
+    expect(css).toMatch(/box-shadow: 0 0 20px 0px rgba\(255, 158, 207, 0\.28\), 0 0 26px 0px rgba\(185, 166, 255, 0\.24\)/);
   });
 
   it("membuat gradient border lewat ::before bermask", () => {
@@ -228,7 +228,7 @@ describe("dekorasi bubble", () => {
 
   it("membuat scanlines dengan repeating-linear-gradient", () => {
     const css = generateCss(clone("grid"));
-    expect(css).toMatch(/repeating-linear-gradient\(0deg, rgba\(125, 211, 252, 0\.08\) 0px/);
+    expect(css).toMatch(/repeating-linear-gradient\(0deg, rgba\(198, 255, 61, 0\.06\) 0px/);
   });
 
   it("menaruh gambar di ::after dengan opacity, hanya bila link terisi", () => {

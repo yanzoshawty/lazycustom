@@ -14,7 +14,7 @@ function ok(name, cond, detail = "") {
 
   async function newPage(opts = {}, theme = "dark") {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, ...opts });
-    await ctx.addInitScript((t) => { try { if (!localStorage.getItem("lc-theme")) localStorage.setItem("lc-theme", t); } catch {} }, theme);
+    await ctx.addInitScript((t) => { try { localStorage.setItem("lc-tour-done", "1"); if (!localStorage.getItem("lc-theme")) localStorage.setItem("lc-theme", t); } catch {} }, theme);
     const p = await ctx.newPage();
     p.setDefaultTimeout(8000);
     p.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));

@@ -35,7 +35,7 @@ function ok(name, cond, detail = "") {
 (async () => {
   const browser = await chromium.launch({ args: ["--no-sandbox"] });
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, permissions: ["clipboard-read", "clipboard-write"] });
-  await ctx.addInitScript(() => { try { localStorage.setItem("lc-theme", "dark"); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem("lc-tour-done", "1"); localStorage.setItem("lc-theme", "dark"); } catch {} });
   const p = await ctx.newPage();
   p.setDefaultTimeout(8000);
   const csp = [], pageErrors = [];
@@ -167,6 +167,7 @@ function ok(name, cond, detail = "") {
   ok("file ekspor membawa gambar unggahan", JSON.stringify(exported).includes("data:image/png;base64,"));
   // Konteks baru = komputer lain (penyimpanan browser terpisah).
   const ictx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ictx.addInitScript(() => { try { localStorage.setItem("lc-tour-done", "1"); } catch {} });
   const imp = await ictx.newPage();
   imp.setDefaultTimeout(8000);
   await imp.goto(BASE, { waitUntil: "load" });

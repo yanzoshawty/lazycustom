@@ -13,9 +13,9 @@ interface Props {
   className?: string;
 }
 
-/** Latar gameplay yang sama dengan backdrop Photo di editor, supaya chat transparan terlihat seperti di atas stream. */
+/** Latar foto (disimpan di situs sendiri supaya cepat dan tanpa host luar) yang sama dengan backdrop Photo di editor, supaya chat transparan terlihat seperti di atas stream. */
 const BACKDROP = {
-  backgroundImage: "url(https://picsum.photos/seed/lazycustom-gameplay/1000/800), linear-gradient(135deg, #2c5364, #203a43, #0f2027)",
+  backgroundImage: "url(/backdrop-gameplay.webp), linear-gradient(135deg, #2c5364, #203a43, #0f2027)",
   backgroundSize: "cover",
   backgroundPosition: "center",
 };
@@ -24,10 +24,20 @@ const BACKDROP = {
  * Simulator chat yang sama dengan editor (iframe bersandbox, tanpa allow-same-origin), dipakai sebagai
  * produk sungguhan di halaman utama. Tidak bisa diklik: ini tontonan, editornya ada di /editor.
  */
-export function LivePreview({ design, focus = null, title, className = "" }: Props) {
+export function LivePreview({ design, focus = null, title, className = "", lazy = false }: Props & { lazy?: boolean }) {
   const doc = useMemo(() => buildPreviewDoc(generateCss(design), "live"), [design]);
+  const box = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
+  // lazy: simulator baru dinyalakan saat bingkainya mendekati layar, supaya tidak ikut membebani muat awal.
+  const [near, setNear] = useState(!lazy);
+
+  useEffect(() => {
+    if (near || !box.current) return;
+    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setNear(true), { rootMargin: "400px 0px" });
+    io.observe(box.current);
+    return () => io.disconnect();
+  }, [near]);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -51,16 +61,18 @@ export function LivePreview({ design, focus = null, title, className = "" }: Pro
   }, [ready, focus]);
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={BACKDROP}>
-      <iframe
-        ref={frame}
-        title={title}
-        srcDoc={doc}
-        sandbox="allow-scripts"
-        tabIndex={-1}
-        className="pointer-events-none mx-auto block h-full w-full max-w-[420px] border-0 bg-transparent"
-        style={{ colorScheme: "normal" }}
-      />
+    <div ref={box} className={`relative overflow-hidden ${className}`} style={BACKDROP}>
+      {near ? (
+        <iframe
+          ref={frame}
+          title={title}
+          srcDoc={doc}
+          sandbox="allow-scripts"
+          tabIndex={-1}
+          className="pointer-events-none mx-auto block h-full w-full max-w-[420px] border-0 bg-transparent"
+          style={{ colorScheme: "normal" }}
+        />
+      ) : null}
     </div>
   );
 }

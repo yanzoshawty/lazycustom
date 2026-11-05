@@ -26,7 +26,7 @@ const overflowProbe = () => {
   const pageErrors = [];
   async function newPage(width, height, theme = "dark", mobile = true) {
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, isMobile: mobile && width < 800, hasTouch: mobile && width < 800 });
-    await ctx.addInitScript((t) => { try { localStorage.setItem("lc-theme", t); } catch {} }, theme);
+    await ctx.addInitScript((t) => { try { localStorage.setItem("lc-tour-done", "1"); localStorage.setItem("lc-theme", t); } catch {} }, theme);
     const p = await ctx.newPage();
     p.setDefaultTimeout(8000);
     p.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 200)));

@@ -12,7 +12,7 @@ function ok(name, cond, detail = "") {
 (async () => {
   const browser = await chromium.launch({ args: ["--no-sandbox"] });
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await ctx.addInitScript(() => { try { localStorage.setItem("lc-theme", "dark"); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem("lc-tour-done", "1"); localStorage.setItem("lc-theme", "dark"); } catch {} });
   const p = await ctx.newPage();
   p.setDefaultTimeout(8000);
   const pageErrors = [];

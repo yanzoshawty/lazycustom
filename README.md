@@ -27,7 +27,14 @@ kanan). Lihat docs/screenshot.png -->
   di chat YouTube belum terkonfirmasi, jadi editor mengingatkan untuk mengecek sekali di OBS.
 - **Pasang di OBS dalam empat langkah**: Salin CSS, buat link chat popout, tambah Browser Source, tempel di
   Custom CSS. Setelah Copy CSS ada pengingat langkah berikutnya.
-- **16 template siap pakai**, dari beberapa gaya berbeda:
+- **Intro dan tur**: halaman utama dibuka dengan intro singkat (sekali per sesi, bisa dilewati dengan tombol
+  atau Escape). Editor menampilkan tur lima langkah saat pertama dibuka, dan bisa diputar ulang dari tombol ?
+  di header. Keduanya tidak tampil untuk `prefers-reduced-motion` (intro) dan tidak mengunci halaman (tur).
+- **Latar balon chat melayang**: canvas 2D di halaman utama dan editor (lebih redup di editor), bergeser
+  sedikit mengikuti kursor, berhenti saat tab tidak terlihat, diam untuk gerak minimal.
+- **Badge sejajar nama**: ikon member, verified, dan moderator setinggi huruf nama (1em) dan berada tepat di
+  tengah baris nama, termasuk saat skala otomatis mengecilkan chat.
+- **16 template siap pakai**, dirombak dengan palet dan dekorasi baru, dari beberapa gaya berbeda:
   - *Glass*: Crystal, Frost
   - *VTuber/pastel*: Dreamy, Bloom, Sticker
   - *Editorial/retro*: Broadsheet, Gazette

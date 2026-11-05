@@ -292,3 +292,37 @@ describe("Editor: tab Roles dan link template", () => {
     expect(location.search).toBe("");
   });
 });
+
+describe("Editor: tur singkat", () => {
+  it("muncul otomatis di kunjungan pertama, bisa dilanjut, dan Lewati menyimpan tanda", async () => {
+    render(<Editor />);
+    const dialog = await screen.findByRole("dialog", { name: "Preview chat" }, { timeout: 2000 });
+    expect(within(dialog).getByText("Langkah 1 dari 5")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Lanjut" }));
+    expect(screen.getByRole("dialog", { name: "Desain global dan per peran" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Kembali" }));
+    expect(screen.getByRole("dialog", { name: "Preview chat" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Lewati" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(localStorage.getItem("lc-tour-done")).toBe("1");
+  });
+
+  it("tidak muncul lagi bila sudah pernah, tapi bisa dibuka dari tombol tur", async () => {
+    localStorage.setItem("lc-tour-done", "1");
+    render(<Editor />);
+    await new Promise((r) => setTimeout(r, 900));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Tur singkat editor" }));
+    expect(screen.getByRole("dialog", { name: "Preview chat" })).toBeInTheDocument();
+  });
+
+  it("Escape menutup tur dan langkah terakhir berlabel Mulai mendesain", async () => {
+    localStorage.setItem("lc-tour-done", "1");
+    render(<Editor />);
+    fireEvent.click(screen.getByRole("button", { name: "Tur singkat editor" }));
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByRole("button", { name: "Lanjut" }));
+    expect(screen.getByRole("button", { name: "Mulai mendesain" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});

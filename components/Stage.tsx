@@ -20,7 +20,7 @@ const BACKDROP_STYLE: Record<Backdrop, { className?: string; style?: React.CSSPr
   photo: {
     style: {
       backgroundImage:
-        "url(https://picsum.photos/seed/lazycustom-gameplay/1000/800), linear-gradient(135deg, #2c5364, #203a43, #0f2027)",
+        "url(/backdrop-gameplay.webp), linear-gradient(135deg, #2c5364, #203a43, #0f2027)",
       backgroundSize: "cover",
       backgroundPosition: "center",
     },

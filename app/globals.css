@@ -65,8 +65,8 @@
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   /* Outfit: geometri bulat yang serumpun dengan bentuk bubble chat dan stiker, tetap jelas di ukuran kecil. */
-  --font-sans: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-field: 12px;
   --radius-panel: 20px;
@@ -74,11 +74,15 @@
 
 html {
   background: var(--bg);
+  /* Ruang scrollbar dipesan tetap: intro mengunci scroll lalu melepasnya, dan di scrollbar klasik (Windows)
+     lebar halaman jangan sampai ikut menyusut 15px saat scrollbar muncul kembali. */
+  scrollbar-gutter: stable;
 }
 
+/* Warna latar ada di html. Body transparan supaya latar balon (canvas fixed, z-index -1) tidak tertutup. */
 body {
   min-height: 100dvh;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -155,6 +159,24 @@ html.lenis body {
 }
 .lenis.lenis-stopped {
   overflow: hidden;
+}
+
+/*
+ * Intro halaman utama: lapisan hanya tampil bila <html> ditandai intro-pending oleh skrip sebelum render.
+ * Pengaman: kalau JavaScript gagal menjalankan intro, lapisan tetap hilang sendiri setelah 6 detik.
+ */
+.intro-pending .intro-overlay {
+  display: flex;
+  animation: intro-failsafe 0s linear 6s forwards;
+}
+.intro-pending body {
+  overflow: hidden;
+}
+@keyframes intro-failsafe {
+  to {
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

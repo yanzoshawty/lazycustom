@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import {
   ArrowArcLeft,
   ArrowArcRight,
+  Question,
   FilmStrip,
   FolderSimple,
   Shapes,
@@ -25,8 +26,10 @@ import { decodeDesign, readShareHash } from "@/lib/design/share";
 import { designStore } from "@/lib/design/store";
 import { TEMPLATES, templateById } from "@/lib/design/templates";
 import { report } from "@/lib/report";
+import { BubbleField } from "./BubbleField";
 import { CanvasContext, type BubbleScope, type CanvasApi } from "./canvas-context";
 import { DesignsPanel } from "./DesignsPanel";
+import { EditorTour, TOUR_KEY } from "./EditorTour";
 import { ErrorNotice } from "./ErrorNotice";
 import { CopyButton, ExportPanel, type CopyState } from "./ExportPanel";
 import { Inspector, type Edit } from "./Inspector";
@@ -221,6 +224,20 @@ function EditorInner() {
 
   // Mode geser bagian langsung di preview. Hanya berlaku untuk layout Free.
   const [dragMode, setDragMode] = useState(false);
+
+  // Tur singkat: otomatis sekali di kunjungan pertama, bisa diputar ulang dari tombol ? di header.
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    let seen = true;
+    try {
+      seen = localStorage.getItem(TOUR_KEY) !== null;
+    } catch {
+      // Tanpa localStorage tur tidak dibuka otomatis supaya tidak muncul di setiap kunjungan.
+    }
+    if (seen) return;
+    const t = setTimeout(() => setTourOpen(true), 700);
+    return () => clearTimeout(t);
+  }, []);
   const freeDrag = dragMode && design.message.layout === "free";
 
   const movePart = useCallback(
@@ -270,6 +287,7 @@ function EditorInner() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] px-3 pb-16 sm:px-5">
+      {tourOpen ? <EditorTour onClose={() => setTourOpen(false)} /> : null}
       <header className="flex flex-wrap items-center gap-2 py-3">
         <div className="flex items-center gap-1">
           <Link href="/" aria-label="Lazycustom Livechat, ke halaman utama" className="inline-flex h-11 items-center rounded-field">
@@ -286,8 +304,13 @@ function EditorInner() {
           <button type="button" onClick={() => designStore.redo()} disabled={!snap.canRedo} aria-label="Redo" title="Redo" className={iconButton}>
             <ArrowArcRight size={20} weight="bold" aria-hidden="true" />
           </button>
+          <button type="button" onClick={() => setTourOpen(true)} aria-label="Tur singkat editor" title="Tur singkat editor" className={iconButton}>
+            <Question size={20} weight="bold" aria-hidden="true" />
+          </button>
           <ThemeToggle />
-          <CopyButton state={copyState} onCopy={copyCss} compact />
+          <span data-tour="copy" className="inline-flex">
+            <CopyButton state={copyState} onCopy={copyCss} compact />
+          </span>
         </div>
         {/* key: ganti desain aktif selalu mereset draft ketikan, tanpa bergantung pada pindah fokus */}
         <NameField key={snap.activeId} name={design.name} />
@@ -312,7 +335,7 @@ function EditorInner() {
       <CanvasContext.Provider value={canvas}>
       <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-x-5 gap-y-4 xl:grid-cols-[320px_minmax(0,1fr)_340px]">
         {/* Preview: menempel di atas saat halaman di-scroll */}
-        <div className="order-1 sticky top-0 z-20 -mx-3 border-b border-line bg-bg px-3 pb-2.5 pt-2 sm:-mx-5 sm:px-5 xl:order-2 xl:top-4 xl:mx-0 xl:self-start xl:border-0 xl:bg-transparent xl:p-0">
+        <div data-tour="preview" className="order-1 sticky top-0 z-20 -mx-3 border-b border-line bg-bg px-3 pb-2.5 pt-2 sm:-mx-5 sm:px-5 xl:order-2 xl:top-4 xl:mx-0 xl:self-start xl:border-0 xl:bg-transparent xl:p-0">
           <Stage
             css={css}
             selected={selected}
@@ -384,6 +407,7 @@ function EditorInner() {
 export function Editor() {
   return (
     <ToastProvider>
+      <BubbleField variant="dim" />
       <EditorInner />
     </ToastProvider>
   );

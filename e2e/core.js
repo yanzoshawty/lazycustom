@@ -36,7 +36,7 @@ function ok(name, cond, detail = "") {
   await p.goto(BASE, { waitUntil: "load" });
   await p.waitForTimeout(600);
   let fr = await frameOf(p);
-  ok("halaman tampil dengan judul dan template default Crystal", (await p.title()).includes("lazycustom") && (await p.inputValue("#design-name")) === "Crystal");
+  ok("halaman tampil dengan judul dan template default Crystal", (await p.title()).includes("Lazycustom Livechat") && (await p.inputValue("#design-name")) === "Crystal");
   const count = () => fr.evaluate(() => window.__lc.count());
   await p.waitForTimeout(3500);
   const c1 = await count();

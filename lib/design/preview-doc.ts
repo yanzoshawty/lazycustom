@@ -15,7 +15,7 @@ import { LAYERS } from "./layers";
 
 export type PreviewMode = "live" | "thumb";
 
-export const SEND_KINDS = ["viewer", "member", "moderator", "owner", "superchat", "membership", "sticker"] as const;
+export const SEND_KINDS = ["viewer", "member", "verified", "moderator", "owner", "superchat", "membership", "sticker"] as const;
 export type SendKind = (typeof SEND_KINDS)[number];
 
 /** Kecepatan simulasi: jeda rata-rata antar pesan (milidetik). */
@@ -49,6 +49,9 @@ const TEXTS = [
   "GG! Timing dodge-nya pas banget \u{1F44F}",
   "Ada yang tahu ini game-nya rilis kapan?",
 ];
+
+/** Nama channel fiktif untuk pesan bercentang di simulasi. */
+const VERIFIED_NAMES = ["Studio Senja", "Kanal Ruang Main"];
 
 const MOD_TEXTS = [
   "Pengingat: jangan spoiler ending ya, teman-teman.",
@@ -142,7 +145,7 @@ var gap=1400;
 var timer=null;
 var cursors={};
 var cycle=0;
-var SEQ=['viewer','viewer','member','viewer','moderator','viewer','superchat','viewer','owner','viewer','membership','viewer','sticker','viewer','member','viewer'];
+var SEQ=['viewer','viewer','member','viewer','moderator','viewer','superchat','viewer','verified','viewer','owner','viewer','membership','viewer','sticker','viewer','member','viewer'];
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function pick(arr,key){cursors[key]=((cursors[key]===undefined?-1:cursors[key])+1)%arr.length;return arr[cursors[key]];}
@@ -159,6 +162,7 @@ var clock=8*60+12;
 function time(){clock+=1;var h=Math.floor(clock/60)%24,m=clock%60;return h+':'+(m<10?'0':'')+m;}
 function badge(role){
   if(role==='moderator')return '<yt-live-chat-author-badge-renderer type="moderator"><svg viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#5E84F1"/></svg></yt-live-chat-author-badge-renderer>';
+  if(role==='verified')return '<yt-live-chat-author-badge-renderer type="verified"><svg viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#606060"/><path d="M4.6 8.2l2.2 2.2 4.6-4.6" fill="none" stroke="#fff" stroke-width="1.8"/></svg></yt-live-chat-author-badge-renderer>';
   if(role==='member')return '<yt-live-chat-author-badge-renderer type="member"><svg viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#0F9D58"/></svg></yt-live-chat-author-badge-renderer>';
   return '';
 }
@@ -170,7 +174,7 @@ function topFan(role){
   return '<yt-button-view-model><button style="color:#fff;background:#7b3edb;border:0;border-radius:999px;padding:0 6px;font-size:11px;line-height:18px;font-weight:600">#1</button></yt-button-view-model>';
 }
 function msg(role){
-  var name=role==='owner'?C.owner:pick(C.names,'n');
+  var name=role==='owner'?C.owner:role==='verified'?pick(C.verifiedNames,'v'):pick(C.names,'n');
   var pool=role==='owner'?C.ownerTexts:role==='moderator'?C.modTexts:C.texts;
   var text=pick(pool,'t'+role);
   var attr=role==='viewer'?'':' author-type="'+role+'"';
@@ -339,6 +343,7 @@ export function buildPreviewDoc(css: string, mode: PreviewMode = "live"): string
     modTexts: MOD_TEXTS,
     ownerTexts: OWNER_TEXTS,
     owner: "Kopi Pagi",
+    verifiedNames: VERIFIED_NAMES,
     colors: AVATAR_COLORS,
     tiers: TIERS,
     amounts: AMOUNTS,

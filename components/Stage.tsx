@@ -31,6 +31,7 @@ const BACKDROP_STYLE: Record<Backdrop, { className?: string; style?: React.CSSPr
 const SEND_LABEL: Record<SendKind, string> = {
   viewer: "Message",
   member: "Member",
+  verified: "Verified",
   moderator: "Moderator",
   owner: "Owner",
   superchat: "Super Chat",
@@ -75,7 +76,7 @@ const getReduced = () => window.matchMedia(reducedQuery).matches;
 const toolButton =
   "inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-field border border-line-strong bg-surface px-3 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent active:scale-95";
 
-const ROLE_KINDS = ["viewer", "member", "moderator", "owner", "superchat", "membership", "sticker"];
+const ROLE_KINDS = ["viewer", "member", "verified", "moderator", "owner", "superchat", "membership", "sticker"];
 const ANCHOR_SET = new Set(["top-left", "top-center", "top-right", "middle-left", "center", "middle-right", "bottom-left", "bottom-center", "bottom-right"]);
 
 /** Patch dari iframe diperiksa lagi di sini. Hanya angka hingga dan anchor yang dikenal yang lolos. */
@@ -359,7 +360,7 @@ export function Stage({
       ) : null}
 
       <div
-        className={`hud-frame relative overflow-hidden rounded-panel border border-line ${frameClassName} ${bg.className ?? ""}`}
+        className={`relative overflow-hidden rounded-panel border border-line ${frameClassName} ${bg.className ?? ""}`}
         style={bg.style}
       >
         <iframe

@@ -142,6 +142,7 @@ export function TextPanel({ design: d, edit }: Props) {
                     { value: "all", label: "All" },
                     { value: "viewer", label: "Viewer" },
                     { value: "member", label: "Member" },
+                    { value: "verified", label: "Verified" },
                     { value: "moderator", label: "Mod" },
                     { value: "owner", label: "Owner" },
                   ]}

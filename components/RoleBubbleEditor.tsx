@@ -7,7 +7,7 @@ import { ColorField, Segmented, ToggleField } from "./controls";
 import type { Edit } from "./Inspector";
 import { SurfaceEditor } from "./SurfaceEditor";
 
-const ROLE_LABEL: Record<RoleId, string> = { member: "Member", moderator: "Moderator", owner: "Owner" };
+const ROLE_LABEL: Record<RoleId, string> = { member: "Member", verified: "Verified", moderator: "Moderator", owner: "Owner" };
 
 interface Props {
   design: Design;
@@ -62,6 +62,11 @@ export function RoleBubbleEditor({ design: d, edit, children }: Props) {
             checked={override !== null}
             onChange={(on) => (on ? enable(tab) : edit((x) => ({ ...x, roleBubbles: { ...x.roleBubbles, [tab]: null } })))}
           />
+          {tab === "verified" ? (
+            <p className="rounded-field bg-warn-soft px-3 py-2 text-sm text-warn">
+              Bubble Verified memakai atribut author-type=&quot;verified&quot; yang belum terkonfirmasi di chat YouTube. Cek sekali di OBS dengan pesan dari channel bercentang.
+            </p>
+          ) : null}
           {override ? (
             <>
               <ToggleField

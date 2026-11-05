@@ -58,6 +58,7 @@ export const GIZMO_JS = String.raw`
 var KIND_SEL={
   viewer:'yt-live-chat-text-message-renderer:not([author-type])',
   member:'yt-live-chat-text-message-renderer[author-type="member"]',
+  verified:'yt-live-chat-text-message-renderer[author-type="verified"]',
   moderator:'yt-live-chat-text-message-renderer[author-type="moderator"]',
   owner:'yt-live-chat-text-message-renderer[author-type="owner"]',
   superchat:'yt-live-chat-paid-message-renderer',
@@ -67,6 +68,7 @@ var KIND_SEL={
 var SCOPE_SEL={
   'default':KIND_SEL.viewer+' #content',
   member:KIND_SEL.member+' #content',
+  verified:KIND_SEL.verified+' #content',
   moderator:KIND_SEL.moderator+' #content',
   owner:KIND_SEL.owner+' #content',
   superchat:KIND_SEL.superchat+' #card',

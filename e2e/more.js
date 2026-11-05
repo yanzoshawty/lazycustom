@@ -132,7 +132,8 @@ function ok(name, cond, detail = "") {
   // ---------- D. Salin CSS ----------
   await p.getByRole("button", { name: /Copy CSS|Tersalin/ }).first().click();
   await p.waitForTimeout(200);
-  const clip = await p.evaluate(() => navigator.clipboard.readText());
+  // Clipboard Windows membaca baris baru sebagai CRLF: samakan dulu sebelum dibandingkan.
+  const clip = (await p.evaluate(() => navigator.clipboard.readText())).split("\r\n").join("\n");
   ok("Copy CSS menyalin persis isi kotak CSS", clip === (await cssText(p)) && clip.includes("yt-live-chat-text-message-renderer"));
   ok("tombol berubah jadi Tersalin", (await p.getByRole("button", { name: /Tersalin/ }).count()) >= 1);
   await ctx.close();

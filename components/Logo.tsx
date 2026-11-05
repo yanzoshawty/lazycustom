@@ -1,7 +1,7 @@
 /**
- * Logo lazycustom: balon chat berpotongan sudut (bentuk kristal) dengan slider di dalamnya.
- * Ide dasarnya: cukup geser, tidak perlu menulis kode. Hanya tiga elemen geometri
- * supaya tetap terbaca di ukuran favicon.
+ * Logo Lazycustom Livechat: balon chat berpotongan sudut dengan slider di dalamnya (simbol lama,
+ * dipertahankan atas permintaan pemilik). Ide dasarnya: cukup geser, tidak perlu menulis kode.
+ * Hanya tiga elemen geometri supaya tetap terbaca di ukuran favicon.
  */
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
@@ -13,11 +13,14 @@ export function LogoMark({ size = 28 }: { size?: number }) {
   );
 }
 
-export function Logo() {
+/** Wordmark: "Livechat" dicetak lebih ringan supaya nama utama tetap terbaca pertama. */
+export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <LogoMark />
-      <span className="font-display text-xl font-bold tracking-tight text-ink max-[359px]:sr-only">lazycustom</span>
+      <span className={`font-display text-lg leading-none tracking-tight text-ink sm:text-xl ${compact ? "max-sm:sr-only" : "max-[359px]:sr-only"}`}>
+        <span className="font-bold">Lazycustom</span> <span className="font-medium text-ink-2">Livechat</span>
+      </span>
     </span>
   );
 }

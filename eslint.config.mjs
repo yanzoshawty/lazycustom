@@ -5,5 +5,7 @@ import nextTs from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "coverage/**", "e2e/**", "shots/**"]),
+  // Kode vendor React Bits disalin apa adanya dari registry supaya mudah diperbarui.
+  { files: ["components/reactbits/**"], rules: { "react-hooks/set-state-in-effect": "off" } },
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "coverage/**", "e2e/**", "shots/**", "lazycustom-v2-fresh/**"]),
 ]);

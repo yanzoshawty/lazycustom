@@ -39,6 +39,7 @@ describe("Editor: keadaan awal", () => {
     render(<Editor />);
     expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
       "Templates",
+      "Roles",
       "Elements",
       "Text",
       "Uploads",
@@ -256,5 +257,38 @@ describe("Editor: gambar dari luar pada desain orang lain", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buka tanpa gambar" }));
     await waitFor(() => expect(nameInput().value).toBe("Dari File"));
     expect(remoteImageUrls(designStore.getSnapshot().design)).toEqual([]);
+  });
+});
+
+describe("Editor: tab Roles dan link template", () => {
+  it("membuka Verified dari tab Roles memilih layer Bubble dengan tab Verified", () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole("tab", { name: "Roles" }));
+    fireEvent.click(within(document.getElementById("panel-roles")!).getByRole("button", { name: /^Verified/ }));
+    expect(screen.getByRole("heading", { level: 2, name: "Bubble" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Verified" })).toBeChecked();
+    expect(screen.getByText(/belum terkonfirmasi di chat YouTube/)).toBeInTheDocument();
+  });
+
+  it("menyalakan bubble Verified menulis rule author-type verified ke CSS", () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole("tab", { name: "Roles" }));
+    fireEvent.click(within(document.getElementById("panel-roles")!).getByRole("button", { name: /^Verified/ }));
+    fireEvent.click(screen.getByRole("switch", { name: /Custom bubble untuk Verified/ }));
+    expect(codeText()).toContain('[author-type="verified"] #content');
+  });
+
+  it("?template=id membuat desain baru dari template itu dan membersihkan alamat", () => {
+    history.replaceState(null, "", "/editor?template=grid");
+    render(<Editor />);
+    expect(codeText()).toContain("family=Rajdhani");
+    expect(location.search).toBe("");
+  });
+
+  it("?template tidak dikenal diabaikan", () => {
+    history.replaceState(null, "", "/editor?template=bukan-template");
+    render(<Editor />);
+    expect(nameInput().value).toBe("Crystal");
+    expect(location.search).toBe("");
   });
 });

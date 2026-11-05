@@ -14,12 +14,12 @@ import { TEMPLATES, type Template } from "@/lib/design/templates";
  * dibikin rendah dengan sengaja: ini kartu di galeri, bukan preview penuh, jadi cukup
  * kelihatan sekilas seperti apa bentuknya, bukan menampilkan dua pesan utuh.
  */
-const Thumb = memo(function Thumb({ design }: { design: Design }) {
+export const Thumb = memo(function Thumb({ design, className = "h-[68px] rounded-[8px]" }: { design: Design; className?: string }) {
   const doc = useMemo(() => buildPreviewDoc(generateCss(design), "thumb"), [design]);
   return (
     <div
       aria-hidden="true"
-      className="h-[68px] overflow-hidden rounded-[8px] border border-line"
+      className={`overflow-hidden border border-line ${className}`}
       style={{ background: "linear-gradient(160deg, #1a1d26, #0d0f14)" }}
     >
       <iframe

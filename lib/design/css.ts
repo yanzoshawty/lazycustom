@@ -609,7 +609,7 @@ export function generateCss(d: Design): string {
   const imp = fontImport(d.font);
   const M = SEL.text;
 
-  out.push("/* lazycustom: tempel di OBS, Browser Source, kolom Custom CSS */");
+  out.push("/* Lazycustom Livechat: tempel di OBS, Browser Source, kolom Custom CSS */");
   // @import harus jadi aturan pertama di stylesheet.
   if (imp) out.push(imp);
 
@@ -656,6 +656,7 @@ export function generateCss(d: Design): string {
     `${M}[author-type="owner"]`,
     `${M}[author-type="moderator"]`,
     `${M}[author-type="member"]`,
+    `${M}[author-type="verified"]`,
   ];
   out.push("/* Baris pesan */\n" + rule(rowSelectors, rowDecls));
 
@@ -712,11 +713,13 @@ export function generateCss(d: Design): string {
   if (b.show) out.push(...pseudoRules(`${M} #content`, b));
 
   if (b.show && b.roleTint) {
-    const roles: Array<["member" | "moderator" | "owner", string]> = [
+    const roles: Array<[string, string]> = [
       ["member", d.nameStyle.colors.member],
       ["moderator", d.nameStyle.colors.moderator],
       ["owner", d.nameStyle.colors.owner],
     ];
+    // Verified tanpa warna sendiri sama dengan viewer, jadi tidak diberi semburat.
+    if (d.nameStyle.colors.verified) roles.push(["verified", d.nameStyle.colors.verified]);
     out.push(
       "/* Bubble menurut peran */\n" +
         roles
@@ -774,13 +777,17 @@ export function generateCss(d: Design): string {
         ["border-radius", "0"],
       ]) +
       "\n" +
-      (["member", "moderator", "owner"] as const)
-        .map((role) =>
-          rule(
-            [`${M}[author-type="${role}"] #author-name`, `${M} #author-name.${role}`, `${M} #author-name[type="${role}"]`],
-            [["color", n.colors[role]]],
-          ),
-        )
+      (["member", "verified", "moderator", "owner"] as const)
+        .flatMap((role) => {
+          const color = n.colors[role];
+          if (!color) return [];
+          return [
+            rule(
+              [`${M}[author-type="${role}"] #author-name`, `${M} #author-name.${role}`, `${M} #author-name[type="${role}"]`],
+              [["color", color]],
+            ),
+          ];
+        })
         .join("\n"),
   );
 

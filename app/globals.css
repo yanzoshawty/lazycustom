@@ -2,53 +2,49 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Token desain lazycustom.
- * Palet: dark grey, crystal blue, dan putih. Satu aksen (crystal blue) untuk seluruh UI editor.
- * Warna-warni datang dari tema chat di area preview, bukan dari UI editor.
- * Bentuk: panel 16px, kolom isian dan tombol 10px, chip kecil pil. Ornamen futuristik
- * dibatasi pada grid latar yang sangat halus dan bingkai HUD di area preview.
+ * Token desain Lazycustom Livechat. Arah: pop VTuber cerah.
+ * Palet: putih susu keunguan sebagai dasar, ungu tinta untuk teks, satu aksen hot pink.
+ * Warna-warni lain datang dari tema chat di area preview, bukan dari UI editor.
+ * Bentuk: panel 20px, kolom isian dan tombol 12px, chip kecil pil. Motif identitas: sudut
+ * ekor balon chat (kiri bawah kecil) pada elemen yang mewakili satu pesan atau satu aksi utama.
  */
 :root {
-  --bg: #edf1f5;
-  --surface: #f9fbfc;
-  --surface-2: #e4eaf0;
-  --line: #cbd4de;
-  --line-strong: #748190;
-  --text: #11161c;
-  --text-2: #3e4a58;
-  --text-3: #566373;
-  --accent: #066496;
-  --on-accent: #f9fbfc;
-  --accent-soft: #d3ecf8;
+  --bg: #fbf9fe;
+  --surface: #ffffff;
+  --surface-2: #f3eef9;
+  --line: #e6dfef;
+  --line-strong: #8a8098;
+  --text: #1c1626;
+  --text-2: #4a4258;
+  --text-3: #5f566e;
+  --accent: #cf1a69;
+  --on-accent: #ffffff;
+  --accent-soft: #ffeef5;
   --danger: #b3261e;
   --danger-soft: #fbe6e4;
   --warn: #8a5a00;
   --warn-soft: #fbefd2;
-  --edge: rgba(255, 255, 255, 0.7);
-  --grid: rgba(6, 100, 150, 0.06);
-  --glow: rgba(6, 100, 150, 0.1);
+  --shadow: rgba(76, 32, 92, 0.1);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #101317;
-  --surface: #171b21;
-  --surface-2: #1e232b;
-  --line: #2c333d;
-  --line-strong: #66727f;
-  --text: #eef2f6;
-  --text-2: #b7c0cc;
-  --text-3: #93a0af;
-  --accent: #7dd3fc;
-  --on-accent: #06202e;
-  --accent-soft: #12303f;
+  --bg: #15111c;
+  --surface: #1c1725;
+  --surface-2: #251f31;
+  --line: #352d44;
+  --line-strong: #7e7392;
+  --text: #f6f1fb;
+  --text-2: #cec5db;
+  --text-3: #aba1bd;
+  --accent: #ff6fab;
+  --on-accent: #2a0716;
+  --accent-soft: #3b1529;
   --danger: #ff9b93;
   --danger-soft: #3a1917;
   --warn: #f2c96b;
   --warn-soft: #33270b;
-  --edge: rgba(255, 255, 255, 0.05);
-  --grid: rgba(125, 211, 252, 0.05);
-  --glow: rgba(125, 211, 252, 0.1);
+  --shadow: rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
 
@@ -68,11 +64,12 @@
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk Variable", var(--font-geist-sans), ui-sans-serif, sans-serif;
+  /* Outfit: geometri bulat yang serumpun dengan bentuk bubble chat dan stiker, tetap jelas di ukuran kecil. */
+  --font-sans: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --radius-field: 10px;
-  --radius-panel: 16px;
+  --radius-field: 12px;
+  --radius-panel: 20px;
 }
 
 html {
@@ -81,27 +78,11 @@ html {
 
 body {
   min-height: 100dvh;
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-/* Grid latar yang sangat halus dengan cahaya lembut dari atas. Tidak menangkap klik. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    radial-gradient(70% 45% at 50% 0%, var(--glow), transparent 70%),
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size:
-    auto,
-    44px 44px,
-    44px 44px;
 }
 
 :focus-visible {
@@ -131,34 +112,24 @@ input[type="range"] {
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* Panel dasar: permukaan dengan garis tipis dan sorotan tepi atas. */
+/* Panel dasar: permukaan dengan garis tipis. Bayangan hanya untuk panel yang mengapung di atas halaman. */
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
-  box-shadow: inset 0 1px 0 var(--edge);
 }
 
-/* Bingkai HUD: siku tipis di keempat sudut area preview. */
-.hud-frame {
-  --tick: 14px;
-  --tick-w: 2px;
-  background-image:
-    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
-    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
-    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
-    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent));
-  background-repeat: no-repeat;
-  background-size:
-    var(--tick) var(--tick-w), var(--tick-w) var(--tick),
-    var(--tick) var(--tick-w), var(--tick-w) var(--tick),
-    var(--tick) var(--tick-w), var(--tick-w) var(--tick),
-    var(--tick) var(--tick-w), var(--tick-w) var(--tick);
-  background-position:
-    left top, left top,
-    right top, right top,
-    left bottom, left bottom,
-    right bottom, right bottom;
+/* Motif identitas: sudut ekor balon chat. Dipakai untuk satu pesan, satu kartu peran, atau aksi utama. */
+.bubble-tail {
+  border-radius: var(--radius-panel) var(--radius-panel) var(--radius-panel) 6px;
+}
+.bubble-tail-sm {
+  border-radius: var(--radius-field) var(--radius-field) var(--radius-field) 4px;
+}
+
+/* Elevasi: hanya untuk lapisan yang benar-benar di atas konten (preview yang menempel, toast). */
+.lift {
+  box-shadow: 0 18px 40px -24px var(--shadow);
 }
 
 /* Latar kotak-kotak untuk menandai area transparan di preview. */
@@ -169,6 +140,21 @@ input[type="range"] {
     linear-gradient(45deg, #b9bec9 25%, transparent 25%, transparent 75%, #b9bec9 75%);
   background-size: 20px 20px;
   background-position: 0 0, 10px 10px;
+}
+
+/* Lenis: kelas yang dipasang di <html> saat smooth scroll aktif. Dari panduan resmi lenis. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

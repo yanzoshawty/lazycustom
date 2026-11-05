@@ -6,7 +6,7 @@ import { PANEL_LIMITS, PIN_LIMITS } from "./gizmo-script";
  * (menempel di bubble atau kartu) dan gambar panel (tetap di panel chat).
  */
 export type ImageScope = "default" | RoleId | "superchat" | "membership" | "sticker";
-export const IMAGE_SCOPES: readonly ImageScope[] = ["default", "member", "moderator", "owner", "superchat", "membership", "sticker"];
+export const IMAGE_SCOPES: readonly ImageScope[] = ["default", "member", "verified", "moderator", "owner", "superchat", "membership", "sticker"];
 
 export type ImageRef = { kind: "pin"; scope: ImageScope; id: string } | { kind: "panel"; id: string };
 

@@ -1,17 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowArcLeft,
   ArrowArcRight,
+  FilmStrip,
   FolderSimple,
   Shapes,
   SlidersHorizontal,
-  Sparkle,
   SquaresFour,
   Stack,
   TextT,
   UploadSimple,
+  UsersThree,
   type Icon,
 } from "@phosphor-icons/react";
 import { copyText } from "@/lib/clipboard";
@@ -21,7 +23,7 @@ import type { SendKind } from "@/lib/design/preview-doc";
 import { designsEqual, type GridPart, remoteImageHosts, remoteImageUrls, stripRemoteImages, type Design, type LayerId, type TemplateId } from "@/lib/design/model";
 import { decodeDesign, readShareHash } from "@/lib/design/share";
 import { designStore } from "@/lib/design/store";
-import { templateById } from "@/lib/design/templates";
+import { TEMPLATES, templateById } from "@/lib/design/templates";
 import { report } from "@/lib/report";
 import { CanvasContext, type BubbleScope, type CanvasApi } from "./canvas-context";
 import { DesignsPanel } from "./DesignsPanel";
@@ -37,26 +39,28 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ToastProvider, useToast } from "./Toaster";
 import { AnimatePanel } from "./tools/AnimatePanel";
 import { ElementsPanel } from "./tools/ElementsPanel";
+import { RolesPanel } from "./tools/RolesPanel";
 import { TextPanel } from "./tools/TextPanel";
 import { UploadsPanel } from "./tools/UploadsPanel";
 
-type Tab = "templates" | "elements" | "text" | "uploads" | "animate" | "layers" | "designs";
+type Tab = "templates" | "roles" | "elements" | "text" | "uploads" | "animate" | "layers" | "designs";
 type MobileTab = Tab | "properties";
 
 /** Tools di sisi kiri ala Canva. Properties hanya jadi tab di layar sempit, di layar lebar ia punya kolom sendiri. */
 const TABS: Array<{ id: MobileTab; label: string; Icon: Icon }> = [
   { id: "templates", label: "Templates", Icon: SquaresFour },
+  { id: "roles", label: "Roles", Icon: UsersThree },
   { id: "elements", label: "Elements", Icon: Shapes },
   { id: "text", label: "Text", Icon: TextT },
   { id: "uploads", label: "Uploads", Icon: UploadSimple },
-  { id: "animate", label: "Animate", Icon: Sparkle },
+  { id: "animate", label: "Animate", Icon: FilmStrip },
   { id: "layers", label: "Layers", Icon: Stack },
   { id: "designs", label: "Designs", Icon: FolderSimple },
   { id: "properties", label: "Properties", Icon: SlidersHorizontal },
 ];
 
 const iconButton =
-  "inline-flex size-10 shrink-0 items-center justify-center rounded-field border border-line-strong bg-surface text-ink-2 transition hover:border-accent hover:text-accent active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line-strong disabled:hover:text-ink-2";
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-field border border-line-strong bg-surface text-ink-2 transition hover:border-accent hover:text-accent active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line-strong disabled:hover:text-ink-2";
 
 /** Nama desain: boleh kosong sementara saat mengetik, nilai valid terakhir dipertahankan. */
 function NameField({ name }: { name: string }) {
@@ -78,7 +82,7 @@ function NameField({ name }: { name: string }) {
           designStore.rename(e.target.value);
         }}
         onBlur={() => setDraft(null)}
-        className="h-10 w-full min-w-0 rounded-field border border-line bg-surface px-3 font-display text-sm font-semibold text-ink placeholder:text-ink-3 hover:border-line-strong sm:max-w-sm"
+        className="h-11 w-full min-w-0 rounded-field border border-line bg-surface px-3 font-display text-sm font-semibold text-ink placeholder:text-ink-3 hover:border-line-strong sm:max-w-sm"
       />
     </div>
   );
@@ -138,6 +142,19 @@ function EditorInner() {
     });
   }, [requestOpen]);
 
+  // Link dari galeri template di halaman utama (?template=id): buat desain baru, desain lama tidak tertimpa.
+  const handledTemplate = useRef(false);
+  useEffect(() => {
+    if (handledTemplate.current) return;
+    handledTemplate.current = true;
+    const id = new URLSearchParams(location.search).get("template");
+    if (!id) return;
+    history.replaceState(null, "", location.pathname + location.hash);
+    const t = TEMPLATES.find((x) => x.id === id);
+    if (!t) return;
+    if (designStore.newDesign(t.id)) toast(`Desain baru dari template ${t.name} dibuat`);
+  }, [toast]);
+
   const edit = useCallback<Edit>((fn, key) => {
     designStore.update((d) => {
       const next = fn(d);
@@ -157,7 +174,7 @@ function EditorInner() {
   const selectLayer = useCallback((layer: LayerId, role?: string | null) => {
     setSelected(layer);
     if (role === "viewer") setScope("default");
-    else if (role === "member" || role === "moderator" || role === "owner") setScope(role);
+    else if (role === "member" || role === "verified" || role === "moderator" || role === "owner") setScope(role);
     // Layer Bubble dipilih lewat Layers, Elements, atau Animate (tanpa info peran dari klik preview):
     // kembali ke Default, supaya tab peran yang tersisa dari klik sebelumnya tidak diam-diam terbawa.
     else if (layer === "bubble") setScope("default");
@@ -199,7 +216,7 @@ function EditorInner() {
         : null;
   const imageKind: SendKind | null = imageEdit?.kind === "pin" ? (imageEdit.scope === "default" ? "viewer" : imageEdit.scope) : null;
   const focusKind = imageKind ?? (focusOn ? layerKind : null);
-  const FOCUS_NAME: Record<SendKind, string> = { viewer: "Message", member: "Member", moderator: "Moderator", owner: "Owner", superchat: "Super Chat", membership: "Membership", sticker: "Sticker" };
+  const FOCUS_NAME: Record<SendKind, string> = { viewer: "Message", member: "Member", verified: "Verified", moderator: "Moderator", owner: "Owner", superchat: "Super Chat", membership: "Membership", sticker: "Sticker" };
   const focusLabel = layerKind ? `Fokus ${FOCUS_NAME[layerKind]}` : "Fokus bubble";
 
   // Mode geser bagian langsung di preview. Hanya berlaku untuk layout Free.
@@ -240,6 +257,7 @@ function EditorInner() {
       await copyText(css);
       setCopyState("copied");
       setCopyRef(null);
+      toast("CSS tersalin. Tempel di OBS: Browser Source, kolom Custom CSS");
       setTimeout(() => setCopyState("idle"), 2400);
     } catch (error) {
       setCopyRef(report({ code: "COPY_BLOCKED", error, level: "warn", context: { what: "css" } }));
@@ -253,7 +271,14 @@ function EditorInner() {
   return (
     <div className="mx-auto w-full max-w-[1600px] px-3 pb-16 sm:px-5">
       <header className="flex flex-wrap items-center gap-2 py-3">
-        <Logo />
+        <div className="flex items-center gap-1">
+          <Link href="/" aria-label="Lazycustom Livechat, ke halaman utama" className="inline-flex h-11 items-center rounded-field">
+            <Logo compact />
+          </Link>
+          <a href="#export" className="hidden h-11 items-center rounded-field px-3 text-sm font-semibold text-ink-2 transition hover:text-accent md:inline-flex">
+            Pasang di OBS
+          </a>
+        </div>
         <div className="ml-auto flex items-center gap-1.5 sm:order-last sm:ml-0">
           <button type="button" onClick={() => designStore.undo()} disabled={!snap.canUndo} aria-label="Undo" title="Undo" className={iconButton}>
             <ArrowArcLeft size={20} weight="bold" aria-hidden="true" />
@@ -309,7 +334,7 @@ function EditorInner() {
         {/* Kolom kiri selalu tampil supaya bar tab tidak hilang saat Properties dibuka di layar sempit */}
         <aside aria-label="Templates, layers, dan desain" className="order-2 min-w-0 xl:order-1 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:self-start xl:overflow-y-auto">
           <div className="panel grid gap-4 p-3 sm:p-4">
-            <div role="tablist" aria-label="Panel editor" className="grid grid-cols-4 gap-1 rounded-field bg-surface-2 p-1">
+            <div role="tablist" aria-label="Panel editor" className="grid grid-cols-5 gap-1 rounded-field bg-surface-2 p-1 xl:grid-cols-4">
               {TABS.map(({ id, label, Icon: TabIcon }) => (
                 <button
                   key={id}
@@ -319,7 +344,7 @@ function EditorInner() {
                   aria-selected={id === "properties" ? panel === "properties" : leftTab === id && panel !== "properties"}
                   aria-controls={id === "properties" ? "panel-properties" : `panel-${id}`}
                   onClick={() => pickTab(id)}
-                  className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-[7px] px-1 py-1.5 text-[11px] font-semibold leading-tight text-ink-2 transition hover:text-ink aria-selected:bg-accent aria-selected:text-on-accent ${
+                  className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-[9px] px-1 py-1.5 text-[11px] font-semibold leading-tight text-ink-2 transition hover:text-ink aria-selected:bg-accent aria-selected:text-on-accent ${
                     id === "properties" ? "xl:hidden" : ""
                   }`}
                 >
@@ -330,6 +355,7 @@ function EditorInner() {
             </div>
             <div role="tabpanel" id={`panel-${leftTab}`} aria-labelledby={`tab-${leftTab}`} className={`min-w-0 ${leftHidden}`}>
               {leftTab === "templates" ? <TemplatesPanel activeTemplate={design.templateId} onPick={pickTemplate} onNew={newFromTemplate} /> : null}
+              {leftTab === "roles" ? <RolesPanel design={design} onOpenLayer={selectLayer} /> : null}
               {leftTab === "elements" ? <ElementsPanel design={design} edit={edit} onOpenLayer={selectLayer} onNotice={toast} /> : null}
               {leftTab === "text" ? <TextPanel design={design} edit={edit} /> : null}
               {leftTab === "uploads" ? <UploadsPanel design={design} edit={edit} onNotice={toast} /> : null}

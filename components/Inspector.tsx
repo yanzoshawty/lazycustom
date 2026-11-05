@@ -358,6 +358,25 @@ function LayerFields({ design: d, layer, edit, dragMode, onDragMode }: Required<
                 onChange={(color) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, colors: { ...x.nameStyle.colors, [role]: color } } }), `name.color.${role}`)}
               />
             ))}
+            <ToggleField
+              label="Warna sendiri untuk Verified"
+              hint="Mati: channel bercentang ikut warna Viewer. Atribut Verified di chat YouTube belum terkonfirmasi, jadi cek sekali di OBS."
+              checked={d.nameStyle.colors.verified !== undefined}
+              onChange={(on) =>
+                edit((x) => {
+                  const { verified, ...rest } = x.nameStyle.colors;
+                  void verified;
+                  return { ...x, nameStyle: { ...x.nameStyle, colors: on ? { ...rest, verified: rest.viewer } : rest } };
+                })
+              }
+            />
+            {d.nameStyle.colors.verified !== undefined ? (
+              <ColorField
+                label="Verified"
+                value={d.nameStyle.colors.verified}
+                onChange={(color) => edit((x) => ({ ...x, nameStyle: { ...x.nameStyle, colors: { ...x.nameStyle.colors, verified: color } } }), "name.color.verified")}
+              />
+            ) : null}
           </Section>
         </div>
       );

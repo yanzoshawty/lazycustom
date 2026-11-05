@@ -19,7 +19,7 @@ export function Section({
     <section className="grid gap-4">
       {title ? (
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-ink-3">{title}</h3>
+          <h3 className="font-display text-sm font-semibold text-ink-2">{title}</h3>
           {action}
         </div>
       ) : null}
@@ -180,7 +180,7 @@ export function Segmented<T extends string | number>({
               className="peer sr-only"
             />
             <span
-              className={`block cursor-pointer whitespace-nowrap rounded-[7px] text-ink-2 transition peer-checked:bg-accent peer-checked:font-semibold peer-checked:text-on-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent hover:text-ink peer-checked:hover:text-on-accent ${
+              className={`block cursor-pointer whitespace-nowrap rounded-[9px] text-ink-2 transition peer-checked:bg-accent peer-checked:font-semibold peer-checked:text-on-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent hover:text-ink peer-checked:hover:text-on-accent ${
                 small ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm"
               }`}
             >
@@ -379,7 +379,7 @@ export function AnchorPicker({ label, value, onChange }: { label: string; value:
             aria-label={ANCHOR_LABEL[a]}
             title={ANCHOR_LABEL[a]}
             onClick={() => onChange(a)}
-            className="flex size-9 items-center justify-center rounded-[7px] text-ink-3 transition hover:text-ink aria-checked:bg-accent aria-checked:text-on-accent"
+            className="flex size-9 items-center justify-center rounded-[9px] text-ink-3 transition hover:text-ink aria-checked:bg-accent aria-checked:text-on-accent"
           >
             <span className="size-2 rounded-full bg-current" aria-hidden="true" />
           </button>

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { FONT_IDS } from "../fonts";
 
 /**
- * Model desain lazycustom v2. Satu objek JSON tervalidasi yang menjadi sumber
+ * Model desain Lazycustom Livechat (format v2). Satu objek JSON tervalidasi yang menjadi sumber
  * kebenaran untuk generator CSS, preview, penyimpanan, dan link Share.
  * Semua nilai dibatasi ketat supaya tidak ada input bebas yang bisa menyusup ke CSS.
  */
@@ -281,7 +281,7 @@ export const labelSchema = z.object({
   id,
   text: labelText,
   /** Peran yang menampilkan label. "viewer" berarti penonton biasa tanpa peran. */
-  roles: z.enum(["all", "viewer", "member", "moderator", "owner"]),
+  roles: z.enum(["all", "viewer", "member", "verified", "moderator", "owner"]),
   /** Di mode inline dan stacked: label di awal atau di akhir baris. Di mode grid dan free label ditempatkan lewat kerangka. */
   position: z.enum(["start", "end"]),
   color: hex,
@@ -381,14 +381,20 @@ export const DEFAULT_FREE: FreeLayout = {
 /** Bubble khusus per peran. null berarti memakai bubble utama. Viewer selalu memakai bubble utama. */
 export const roleOverrideSchema = z.object({ surface: surfaceSchema, textColor: hex.nullable() });
 export type RoleOverride = z.infer<typeof roleOverrideSchema>;
-export const ROLE_IDS = ["member", "moderator", "owner"] as const;
+/**
+ * Urutan juga urutan tab di editor. Verified (channel bercentang) belum terkonfirmasi punya
+ * author-type sendiri di DOM YouTube, jadi editornya memberi tahu user untuk mengecek di OBS.
+ */
+export const ROLE_IDS = ["member", "verified", "moderator", "owner"] as const;
 export type RoleId = (typeof ROLE_IDS)[number];
 export const roleBubblesSchema = z.object({
   member: roleOverrideSchema.nullable(),
+  // Ditambahkan setelah v2 dirilis: desain lama tanpa key ini tetap valid.
+  verified: roleOverrideSchema.nullable().default(null),
   moderator: roleOverrideSchema.nullable(),
   owner: roleOverrideSchema.nullable(),
 });
-export const DEFAULT_ROLE_BUBBLES = { member: null, moderator: null, owner: null };
+export const DEFAULT_ROLE_BUBBLES = { member: null, verified: null, moderator: null, owner: null };
 
 const name = z
   .string()
@@ -454,7 +460,8 @@ export const designSchema = z.object({
     weight,
     uppercase: z.boolean(),
     spacing: z.number().int().min(0).max(4),
-    colors: z.object({ viewer: hex, member: hex, moderator: hex, owner: hex }),
+    // verified ditambahkan setelah v2 dirilis: kosong berarti ikut warna viewer.
+    colors: z.object({ viewer: hex, member: hex, verified: hex.optional(), moderator: hex, owner: hex }),
   }),
   text: z.object({
     color: hex,

@@ -1,4 +1,4 @@
-# lazycustom
+# Lazycustom Livechat
 
 **Custom CSS chat live YouTube untuk OBS, gratis dan tanpa akun.**
 
@@ -6,7 +6,7 @@
 [![Lisensi: MIT](https://img.shields.io/badge/lisensi-MIT-blue)](./LICENSE)
 
 Banyak streamer dan VTuber ingin chat overlay yang enak dilihat, tapi custom CSS berbayar sering di luar
-jangkauan, apalagi buat yang masih menabung dulu. lazycustom dibuat supaya siapa pun bisa dapat CSS chat
+jangkauan, apalagi buat yang masih menabung dulu. Lazycustom Livechat dibuat supaya siapa pun bisa dapat CSS chat
 yang rapi tanpa keluar uang: pilih template atau desain sendiri, atur langsung di preview yang mendekati
 tampilan asli, lalu tempel hasilnya ke Browser Source di OBS. Tidak ada akun, tidak ada API key, tidak ada
 biaya.
@@ -16,10 +16,17 @@ kanan). Lihat docs/screenshot.png -->
 
 ## Coba sekarang
 
-**[lazycustom.vercel.app](https://lazycustom.vercel.app)**: langsung di browser, tidak perlu instal apa-apa.
+**[lazycustom.vercel.app](https://lazycustom.vercel.app)**: halaman utama menjelaskan alurnya, editor ada di `/editor`. Langsung di browser, tidak perlu instal apa-apa.
 
 ## Fitur
 
+- **Desain global dan bubble per peran**: satu desain Default untuk semua pesan, lalu bubble khusus untuk
+  Member, Verified, Moderator, dan Owner. Tab **Roles** menampilkan peran mana yang masih ikut Default dan
+  mana yang sudah custom. Kartu Super Chat, Membership, dan Sticker punya pengaturan sendiri.
+- **Verified** (channel bercentang): warna nama, label, dan bubble sendiri. Atribut `author-type="verified"`
+  di chat YouTube belum terkonfirmasi, jadi editor mengingatkan untuk mengecek sekali di OBS.
+- **Pasang di OBS dalam empat langkah**: Salin CSS, buat link chat popout, tambah Browser Source, tempel di
+  Custom CSS. Setelah Copy CSS ada pengingat langkah berikutnya.
 - **16 template siap pakai**, dari beberapa gaya berbeda:
   - *Glass*: Crystal, Frost
   - *VTuber/pastel*: Dreamy, Bloom, Sticker
@@ -27,9 +34,9 @@ kanan). Lihat docs/screenshot.png -->
   - *Esports/gaming*: Arena, Phantom, Cyber, Grid, HUD, Terminal, Quest, Brutal
   - *Netral*: Plain (tanpa bubble, teks bersih)
 - **Preview live yang bergerak**: simulasi chat dengan Play/Pause, kecepatan, dan tombol kirim pesan contoh
-  (viewer, member, moderator, owner, Super Chat, Membership, Sticker).
+  (viewer, member, verified, moderator, owner, Super Chat, Membership, Sticker).
 - **Klik langsung di preview untuk mengedit**: klik bubble untuk memilih layer dan tab peran yang sesuai
-  (Default/Member/Moderator/Owner), lalu atur di panel Properties.
+  (Default/Member/Verified/Moderator/Owner), lalu atur di panel Properties.
 - **Atur gambar langsung di canvas**: geser untuk memindah, tarik titik di sudut untuk mengubah ukuran,
   panah keyboard untuk geser halus. Berlaku untuk image pin di bubble maupun gambar panel.
 - **Mode Fokus**: sembunyikan sementara jenis pesan lain di preview supaya yang sedang diedit gampang
@@ -56,9 +63,21 @@ Butuh Node.js 22.
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
+npm run dev          # http://localhost:3000 (halaman utama), /editor (editor)
 npm run check        # typecheck, lint, tes unit, build (jalankan sebelum deploy)
 ```
+
+## Halaman
+
+- `/`: halaman utama. Smooth scroll [Lenis](https://github.com/darkroomengineering/lenis) yang digerakkan
+  ticker GSAP, ScrollTrigger untuk cerita per peran, dan komponen [React Bits](https://reactbits.dev)
+  (SplitText, ScrollReveal). Preview di halaman ini adalah simulator yang sama dengan editor. Semua gerak
+  mati untuk `prefers-reduced-motion`.
+- `/editor`: editor. Tanpa Lenis karena panelnya punya scroll sendiri dan gambar bisa digeser di canvas.
+  `?template=<id>` membuat desain baru dari template itu (dipakai galeri di halaman utama). Link Share lama
+  (`/#d=...`) otomatis diteruskan ke `/editor`.
+- Komponen React Bits disalin apa adanya di `components/reactbits/` (lisensi MIT + Commons Clause dari
+  React Bits). ClickSpark dipakai sebagai umpan balik tombol Copy CSS.
 
 ## Cara kerja
 
@@ -109,13 +128,13 @@ Uji browser sungguhan ada di `e2e/` (Playwright, dijalankan manual, belum diikat
 ```bash
 npm i -D playwright-core          # sekali saja
 npm run build && npx next start -p 3100
-BASE_URL=http://localhost:3100/ node e2e/core.js      # simulasi, klik-pilih layer, drag and drop, dekorasi
-BASE_URL=http://localhost:3100/ node e2e/more.js      # My Designs, Share, file, tema, animasi, keyboard
-BASE_URL=http://localhost:3100/ node e2e/mobile.js    # overflow di 8 lebar layar, mobile, tap sentuh
-BASE_URL=http://localhost:3100/ node e2e/images.js    # gambar, GIF, upload, bingkai avatar, gambar panel
-BASE_URL=http://localhost:3100/ node e2e/security.js  # tanpa permintaan ke host luar sebelum setuju, XSS, CSP, header
-BASE_URL=http://localhost:3100/ node e2e/tools.js     # tools, animasi, efek, label, grid, editor gambar
-BASE_URL=http://localhost:3100/ node e2e/canvas.js    # drag/resize gambar di canvas, mode fokus, tab peran
+BASE_URL=http://localhost:3100/editor node e2e/core.js      # simulasi, klik-pilih layer, drag and drop, dekorasi
+BASE_URL=http://localhost:3100/editor node e2e/more.js      # My Designs, Share, file, tema, animasi, keyboard
+BASE_URL=http://localhost:3100/editor node e2e/mobile.js    # overflow di 8 lebar layar, mobile, tap sentuh
+BASE_URL=http://localhost:3100/editor node e2e/images.js    # gambar, GIF, upload, bingkai avatar, gambar panel
+BASE_URL=http://localhost:3100/editor node e2e/security.js  # tanpa permintaan ke host luar sebelum setuju, XSS, CSP, header
+BASE_URL=http://localhost:3100/editor node e2e/tools.js     # tools, animasi, efek, label, grid, editor gambar
+BASE_URL=http://localhost:3100/editor node e2e/canvas.js    # drag/resize gambar di canvas, mode fokus, tab peran
 ```
 
 Kalau Chromium tidak ditemukan otomatis, jalankan `npx playwright-core install chromium`. Di lingkungan

@@ -611,7 +611,7 @@ function phantom(): Design {
     elements: { ...DEFAULT_ELEMENTS, name: anim("pan", 220, 60), message: anim("wipe", 300, 140) },
     effects: [effect("glitch", 6, 5), effect("shake", 5, 5)],
     labels: [tag("label-member", "MEMBER", "member", "#FFFFFF", "#E60012", { radius: 0 })],
-    roleBubbles: { member: null, moderator: null, owner: { surface: owner, textColor: "#FFFFFF" } },
+    roleBubbles: { member: null, verified: null, moderator: null, owner: { surface: owner, textColor: "#FFFFFF" } },
     ...cards(bubble, {
       mode: "custom",
       header: solid("#E60012"),
@@ -721,7 +721,7 @@ function arena(): Design {
       tag("label-mod", "MOD", "moderator", "#04121F", "#4DA3FF", { radius: 0 }),
       tag("label-host", "HOST", "owner", "#1A0F00", "#FFB02E", { radius: 0 }),
     ],
-    roleBubbles: { member: null, moderator: { surface: mod, textColor: null }, owner: { surface: owner, textColor: null } },
+    roleBubbles: { member: null, verified: null, moderator: { surface: mod, textColor: null }, owner: { surface: owner, textColor: null } },
     ...cards(bubble, {
       mode: "custom",
       header: solid("#1A222B"),

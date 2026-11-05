@@ -39,19 +39,19 @@ export const ERROR_CATALOG: Record<ErrorCode, ErrorInfo> = {
   },
   IMPORT_INVALID: {
     title: "File pengaturan tidak bisa dibaca",
-    body: "Isi file ini tidak cocok dengan format lazycustom.",
-    action: "Pilih file .json yang kamu ekspor dari lazycustom.",
+    body: "Isi file ini tidak cocok dengan format Lazycustom Livechat.",
+    action: "Pilih file .json yang kamu ekspor dari Lazycustom Livechat.",
     severity: "error",
   },
   IMPORT_TOO_LARGE: {
     title: "File terlalu besar",
-    body: "File pengaturan lazycustom jauh lebih kecil dari ini, jadi kemungkinan yang terpilih file lain.",
-    action: "Pastikan kamu memilih file hasil ekspor lazycustom.",
+    body: "File pengaturan Lazycustom Livechat jauh lebih kecil dari ini, jadi kemungkinan yang terpilih file lain.",
+    action: "Pastikan kamu memilih file hasil ekspor Lazycustom Livechat.",
     severity: "error",
   },
   IMPORT_VERSION: {
     title: "Versi file tidak dikenali",
-    body: "File ini dibuat oleh versi lazycustom yang berbeda.",
+    body: "File ini dibuat oleh versi Lazycustom Livechat yang berbeda.",
     action: "Ekspor ulang dari versi yang sama, atau atur manual di editor.",
     severity: "error",
   },
@@ -69,7 +69,7 @@ export const ERROR_CATALOG: Record<ErrorCode, ErrorInfo> = {
   },
   STORAGE_CORRUPT: {
     title: "Pengaturan lama tidak terbaca",
-    body: "Data yang tersimpan di browser rusak, jadi lazycustom memakai tema awal.",
+    body: "Data yang tersimpan di browser rusak, jadi Lazycustom Livechat memakai tema awal.",
     action: "Atur ulang dari awal, atau impor file cadangan kalau kamu punya.",
     severity: "warning",
   },
@@ -81,7 +81,7 @@ export const ERROR_CATALOG: Record<ErrorCode, ErrorInfo> = {
   },
   SHARE_INVALID: {
     title: "Link Share tidak bisa dibuka",
-    body: "Link ini rusak, terpotong, atau bukan berasal dari lazycustom.",
+    body: "Link ini rusak, terpotong, atau bukan berasal dari Lazycustom Livechat.",
     action: "Minta pengirimnya membuat link Share baru, lalu salin utuh dari awal sampai akhir.",
     severity: "error",
   },
@@ -117,7 +117,7 @@ export const ERROR_CATALOG: Record<ErrorCode, ErrorInfo> = {
   },
   PAGE_NOT_FOUND: {
     title: "Halaman tidak ditemukan",
-    body: "Alamat ini tidak ada di lazycustom.",
+    body: "Alamat ini tidak ada di Lazycustom Livechat.",
     action: "Kembali ke editor.",
     severity: "error",
   },

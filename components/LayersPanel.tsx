@@ -170,7 +170,7 @@ export function LayersPanel({ design, selected, onSelect, edit }: Props) {
 
       <section className="grid gap-2 rounded-panel border border-line bg-surface-2/40 p-3" aria-labelledby="parts-title">
         <div className="grid gap-0.5">
-          <h3 id="parts-title" className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-ink-3">
+          <h3 id="parts-title" className="font-display text-sm font-semibold text-ink-2">
             Urutan bagian pesan
           </h3>
           <p className="text-xs text-ink-2">Seret ikon titik, atau pakai tombol panah, untuk mengatur urutan dari kiri ke kanan.</p>

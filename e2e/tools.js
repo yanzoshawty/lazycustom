@@ -36,7 +36,7 @@ function ok(name, cond, detail = "") {
 
   // ---------- 1. Bar tools ----------
   const names = await p.getByRole("tab").allTextContents();
-  ok("tujuh tab tools terlihat di desktop, Properties punya kolom sendiri", names.join("|") === "Templates|Elements|Text|Uploads|Animate|Layers|Designs", names.join("|"));
+  ok("delapan tab tools terlihat di desktop, Properties punya kolom sendiri", names.join("|") === "Templates|Roles|Elements|Text|Uploads|Animate|Layers|Designs", names.join("|"));
   ok("tab Properties ada di DOM tapi tersembunyi di desktop", (await p.locator('[role="tab"]#tab-properties').count()) === 1 && !(await p.locator('[role="tab"]#tab-properties').isVisible()));
   for (const [t, heading] of [["Elements", /Shape/], ["Text", /Labels/], ["Uploads", /Upload/], ["Animate", /Animate all/]]) {
     await tab(t);
@@ -225,7 +225,7 @@ function ok(name, cond, detail = "") {
   const mp = await m.newPage(); mp.setDefaultTimeout(8000);
   await mp.goto(BASE, { waitUntil: "load" }); await mp.waitForTimeout(700);
   const tabH = await mp.getByRole("tab").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
-  ok("mobile: kedelapan tab terlihat dan cukup besar untuk disentuh", tabH.length === 8 && tabH.every((h) => h >= 44), tabH.join(","));
+  ok("mobile: kesembilan tab terlihat dan cukup besar untuk disentuh", tabH.length === 9 && tabH.every((h) => h >= 44), tabH.join(","));
   for (const t of ["Elements", "Text", "Uploads", "Animate"]) {
     await mp.getByRole("tab", { name: t, exact: true }).click();
     await mp.waitForTimeout(150);

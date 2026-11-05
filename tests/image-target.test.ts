@@ -114,6 +114,6 @@ describe("listImageRefs", () => {
   });
 
   it("mencakup semua scope yang terdaftar", () => {
-    expect(IMAGE_SCOPES).toEqual(["default", "member", "moderator", "owner", "superchat", "membership", "sticker"]);
+    expect(IMAGE_SCOPES).toEqual(["default", "member", "verified", "moderator", "owner", "superchat", "membership", "sticker"]);
   });
 });

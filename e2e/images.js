@@ -122,8 +122,8 @@ function ok(name, cond, detail = "") {
   const bubbleBg = await fr.evaluate(() => getComputedStyle(document.querySelector("yt-live-chat-text-message-renderer #content")).backgroundImage);
   ok("dua image pin bertumpuk sebagai lapisan background bubble", (bubbleBg.match(/url\("data:image/g) || []).length === 2, bubbleBg.slice(0, 120));
   const bubbleSize = await fr.evaluate(() => getComputedStyle(document.querySelector("yt-live-chat-text-message-renderer #content")).backgroundSize);
-  // Chrome menyerialkan "32px auto" sebagai "32px", jadi yang dicek adalah dua pin selebar 32px lalu satu lapisan fill.
-  ok("ukuran dua pin diterapkan (lebar 32px, tinggi mengikuti proporsi)", /^32px, 32px, auto$/.test(bubbleSize), bubbleSize);
+  // Chrome lama menyerialkan "32px auto" sebagai "32px", Chrome baru apa adanya: dua pin selebar 32px lalu satu lapisan fill.
+  ok("ukuran dua pin diterapkan (lebar 32px, tinggi mengikuti proporsi)", /^32px( auto)?, 32px( auto)?, auto$/.test(bubbleSize), bubbleSize);
 
   // ---------- keamanan upload ----------
   const badInput = props.locator('input[type="file"]').first();

@@ -1,4 +1,4 @@
-/** Utilitas warna kecil. Semua warna di lazycustom disimpan sebagai #RRGGBB. */
+/** Utilitas warna kecil. Semua warna di Lazycustom Livechat disimpan sebagai #RRGGBB. */
 
 export const HEX_RE = /^#[0-9a-f]{6}$/i;
 

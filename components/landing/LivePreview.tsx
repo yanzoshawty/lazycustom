@@ -13,12 +13,8 @@ interface Props {
   className?: string;
 }
 
-/** Latar foto (disimpan di situs sendiri supaya cepat dan tanpa host luar) yang sama dengan backdrop Photo di editor, supaya chat transparan terlihat seperti di atas stream. */
-const BACKDROP = {
-  backgroundImage: "url(/backdrop-gameplay.webp), linear-gradient(135deg, #2c5364, #203a43, #0f2027)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-};
+/** Latar solid ungu tua (permintaan pemilik): tenang, satu keluarga dengan palet situs, dan bubble terang tetap menonjol di kedua tema. */
+const BACKDROP = { backgroundColor: "#231C30" };
 
 /**
  * Simulator chat yang sama dengan editor (iframe bersandbox, tanpa allow-same-origin), dipakai sebagai
